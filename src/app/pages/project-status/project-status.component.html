@@ -1,0 +1,457 @@
+<div class="project-status-container">
+    <p-toast></p-toast>
+
+    <!-- Header -->
+    <div class="header-section">
+        <div>
+            <h1 class="page-title">
+                <i class="pi pi-list"></i> Project Status
+            </h1>
+            <p class="page-subtitle">Monitor project status and progress</p>
+        </div>
+        <p-button 
+            label="Generate Report"
+            icon="pi pi-refresh"
+            [loading]="generatingReport"
+            [disabled]="generatingReport"
+            (onClick)="generateReport()">
+        </p-button>
+    </div>
+
+    <!-- General Notes Section -->
+    <p-card styleClass="mb-4">
+        <div class="general-notes-section">
+            <div class="notes-header">
+                <h3><i class="pi pi-file-edit"></i> General Notes</h3>
+                <div class="notes-actions">
+                    @if (!isEditingGeneralNotes) {
+                    <p-button 
+                        label="Edit"
+                        icon="pi pi-pencil"
+                        [text]="true"
+                        size="small"
+                        (onClick)="toggleEditGeneralNotes()">
+                    </p-button>
+                    }
+                    @if (isEditingGeneralNotes) {
+                    <div style="display: flex; gap: 0.5rem;">
+                        <p-button 
+                            label="Cancel"
+                            icon="pi pi-times"
+                            [text]="true"
+                            size="small"
+                            severity="secondary"
+                            (onClick)="cancelEditGeneralNotes()">
+                        </p-button>
+                        <p-button 
+                            label="Save"
+                            icon="pi pi-check"
+                            size="small"
+                            [loading]="savingGeneralNotes"
+                            (onClick)="saveGeneralNotes()">
+                        </p-button>
+                    </div>
+                    }
+                </div>
+            </div>
+            @if (!isEditingGeneralNotes) {
+            <div class="notes-content">
+                @if (!generalNotes) {
+                <p style="color: var(--text-color-secondary); font-style: italic;">
+                    No general notes yet. Click Edit to add notes.
+                </p>
+                }
+                @if (generalNotes) {
+                <div class="preview-content" [innerHTML]="getSafeGeneralNotes()"></div>
+                }
+            </div>
+            }
+            @if (isEditingGeneralNotes) {
+            <p-editor
+                [(ngModel)]="generalNotes"
+                [style]="{'height':'200px', 'width': '100%'}"
+                placeholder="Enter general notes about the project status...">
+                <ng-template pTemplate="header">
+                    <span class="ql-formats">
+                        <select class="ql-header">
+                            <option value="1">Heading 1</option>
+                            <option value="2">Heading 2</option>
+                            <option value="3">Heading 3</option>
+                            <option selected>Normal</option>
+                        </select>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-bold" type="button"></button>
+                        <button class="ql-italic" type="button"></button>
+                        <button class="ql-underline" type="button"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-list" value="ordered" type="button"></button>
+                        <button class="ql-list" value="bullet" type="button"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-link" type="button"></button>
+                        <button class="ql-code-block" type="button"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-clean" type="button"></button>
+                    </span>
+                </ng-template>
+            </p-editor>
+            }
+        </div>
+    </p-card>
+
+    <!-- Projects Status Cards -->
+    @if (loading) {
+    <div class="loading-state">
+        <i class="pi pi-spin pi-spinner" style="font-size: 3rem;"></i>
+        <p>Loading projects...</p>
+    </div>
+    }
+
+    @if (!loading && projectStatuses.length > 0) {
+    <p-accordion [multiple]="true" styleClass="project-accordion">
+      
+        @for (project of projectStatuses; track project.projectId) {
+        <p-accordionpanel>
+            <p-accordionheader>
+                <div class="accordion-header-content">
+                    <strong>{{ project.projectName }}</strong>
+                    @if (project.reworkPercentage > 0) {
+                    <p-tag 
+                        [value]="'Rework: ' + project.reworkPercentage.toFixed(1) + '%'"
+                        [attr.severity]="project.reworkPercentage > 20 ? 'danger' : 'warning'">
+                    </p-tag>
+                    }
+                </div>
+            </p-accordionheader>
+            <p-accordioncontent>
+
+            <!-- Statistics Grid -->
+            <div class="stats-grid">
+                <!-- User Stories Stats -->
+                <p-card styleClass="stats-card">
+                    <h4><i class="pi pi-book"></i> User Stories</h4>
+                    <div class="stat-row">
+                        <span>Total:</span>
+                        <strong>{{ project.userStoryStats.total }}</strong>
+                    </div>
+                    <div class="stat-row">
+                        <span>New:</span>
+                        <strong>{{ project.userStoryStats.new }}</strong>
+                    </div>
+                    <div class="stat-row">
+                        <span>Active:</span>
+                        <strong>{{ project.userStoryStats.active }}</strong>
+                    </div>
+                    <div class="stat-row">
+                        <span>Closed:</span>
+                        <strong>{{ project.userStoryStats.closed }}</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" 
+                             [style.width.%]="getStatusPercentage(project.userStoryStats.closed, project.userStoryStats.total)">
+                        </div>
+                    </div>
+                    <small>{{ getStatusPercentage(project.userStoryStats.closed, project.userStoryStats.total) }}% Complete</small>
+                </p-card>
+
+                <!-- Tasks Stats -->
+                <p-card styleClass="stats-card">
+                    <h4><i class="pi pi-check-square"></i> Tasks</h4>
+                    <div class="stat-row">
+                        <span>Total:</span>
+                        <strong>{{ project.taskStats.total }}</strong>
+                    </div>
+                    <div class="stat-row">
+                        <span>New:</span>
+                        <strong>{{ project.taskStats.new }}</strong>
+                    </div>
+                    <div class="stat-row">
+                        <span>Active:</span>
+                        <strong>{{ project.taskStats.active }}</strong>
+                    </div>
+                    <div class="stat-row">
+                        <span>Closed:</span>
+                        <strong>{{ project.taskStats.closed }}</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" 
+                             [style.width.%]="getStatusPercentage(project.taskStats.closed, project.taskStats.total)">
+                        </div>
+                    </div>
+                    <small>{{ getStatusPercentage(project.taskStats.closed, project.taskStats.total) }}% Complete</small>
+                </p-card>
+
+                <!-- Bugs Stats -->
+                <p-card styleClass="stats-card">
+                    <h4><i class="pi pi-exclamation-triangle"></i> Bugs</h4>
+                    <div class="stat-row">
+                        <span>Total:</span>
+                        <strong>{{ project.bugStats.total }}</strong>
+                    </div>
+                    <div class="stat-row">
+                        <span>New:</span>
+                        <strong>{{ project.bugStats.new }}</strong>
+                    </div>
+                    <div class="stat-row">
+                        <span>Active:</span>
+                        <strong>{{ project.bugStats.active }}</strong>
+                    </div>
+                </p-card>
+
+                <!-- Rework Stats -->
+                <p-card styleClass="stats-card">
+                    <h4><i class="pi pi-refresh"></i> Rework</h4>
+                    <div class="stat-row">
+                        <span>Rework %:</span>
+                        <strong [class.high-rework]="project.reworkPercentage > 20">
+                            {{ project.reworkPercentage.toFixed(1) }}%
+                        </strong>
+                    </div>
+                    <p-button 
+                        label="View Chart"
+                        icon="pi pi-chart-bar"
+                        [text]="true"
+                        size="small"
+                        styleClass="mt-2"
+                        (onClick)="showReworkChart(project)">
+                    </p-button>
+                </p-card>
+            </div>
+
+            <!-- Area Path Filters -->
+            @if (project.areaPaths && project.areaPaths.length > 0) {
+            <p-card styleClass="mt-3">
+                <h4><i class="pi pi-filter"></i> Filter by Area Path</h4>
+                <div class="area-path-filters">
+                    @for (areaPath of project.areaPaths; track areaPath) {
+                    <div class="filter-checkbox-item">
+                        <p-checkbox 
+                            [binary]="true"
+                            [ngModel]="isAreaPathSelected(project, areaPath)"
+                            (ngModelChange)="toggleAreaPath(project, areaPath)"
+                            [inputId]="'area-' + project.projectId + '-' + areaPath">
+                        </p-checkbox>
+                        <label [for]="'area-' + project.projectId + '-' + areaPath">{{ areaPath }}</label>
+                    </div>
+                    }
+                </div>
+                <p-button 
+                    label="Clear Filters"
+                    icon="pi pi-times"
+                    [text]="true"
+                    size="small"
+                    styleClass="mt-2"
+                    (onClick)="clearAreaPathFilter(project)"
+                    [disabled]="!project.selectedAreaPaths || project.selectedAreaPaths.length === 0">
+                </p-button>
+            </p-card>
+            }
+
+            <!-- Actions -->
+            <div class="actions-section">
+                <p-button 
+                    label="View Tasks"
+                    icon="pi pi-list"
+                    [text]="true"
+                    (onClick)="toggleTasksView(project)">
+                </p-button>
+                <p-button 
+                    label="Team Members"
+                    icon="pi pi-users"
+                    [text]="true"
+                    (onClick)="toggleTeamMembers(project)">
+                </p-button>
+            </div>
+
+            <!-- Team Members -->
+            @if (project.showTeamMembers && project.teamMembers && project.teamMembers.length > 0) {
+            <p-card styleClass="mt-3">
+                <h4><i class="pi pi-users"></i> Team Members</h4>
+                <div class="team-members-grid">
+                    @for (member of project.teamMembers; track member.id) {
+                    <div class="team-member-item">
+                        <div class="member-avatar">
+                            {{ member.fullName.charAt(0) || '?' }}
+                        </div>
+                        <div>
+                            <strong>{{ member.fullName }}</strong>
+                            <p>{{ member.title }}</p>
+                            @if (member.role) {
+                            <small>{{ member.role }}</small>
+                            }
+                            @if (member.allocationPercentage || member.AllocationPercentage) {
+                            <small>
+                                ({{ member.allocationPercentage || member.AllocationPercentage }}% allocated)
+                            </small>
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+            </p-card>
+            }
+
+            <!-- Project Comments -->
+            <p-card styleClass="mt-3">
+                <div class="comment-section">
+                    <div class="comment-header">
+                        <h4><i class="pi pi-comment"></i> Project Notes</h4>
+                        @if (!project.isEditingComment) {
+                        <p-button 
+                            label="Edit"
+                            icon="pi pi-pencil"
+                            [text]="true"
+                            size="small"
+                            (onClick)="editComment(project)">
+                        </p-button>
+                        }
+                    </div>
+                    @if (!project.isEditingComment) {
+                    <div class="comment-content">
+                        @if (!project.comment) {
+                        <p style="color: var(--text-color-secondary); font-style: italic;">
+                            No notes yet. Click Edit to add notes.
+                        </p>
+                        }
+                        @if (project.comment) {
+                        <div class="preview-content" [innerHTML]="getSafeProjectComment(project.comment)"></div>
+                        }
+                    </div>
+                    }
+                    @if (project.isEditingComment) {
+                    <div>
+                        <p-editor 
+                            [(ngModel)]="project.comment"
+                            [style]="{'height':'150px', 'width': '100%', 'margin-bottom': '0.5rem'}"
+                            placeholder="Enter project notes...">
+                            <ng-template pTemplate="header">
+                                <span class="ql-formats">
+                                    <select class="ql-header">
+                                        <option value="1">Heading 1</option>
+                                        <option value="2">Heading 2</option>
+                                        <option value="3">Heading 3</option>
+                                        <option selected>Normal</option>
+                                    </select>
+                                </span>
+                                <span class="ql-formats">
+                                    <button class="ql-bold" type="button"></button>
+                                    <button class="ql-italic" type="button"></button>
+                                    <button class="ql-underline" type="button"></button>
+                                </span>
+                                <span class="ql-formats">
+                                    <button class="ql-list" value="ordered" type="button"></button>
+                                    <button class="ql-list" value="bullet" type="button"></button>
+                                </span>
+                                <span class="ql-formats">
+                                    <button class="ql-link" type="button"></button>
+                                    <button class="ql-code-block" type="button"></button>
+                                </span>
+                                <span class="ql-formats">
+                                    <button class="ql-clean" type="button"></button>
+                                </span>
+                            </ng-template>
+                        </p-editor>
+                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                            <p-button 
+                                label="Cancel"
+                                icon="pi pi-times"
+                                [text]="true"
+                                size="small"
+                                severity="secondary"
+                                (onClick)="cancelEditComment(project)">
+                            </p-button>
+                            <p-button 
+                                label="Save"
+                                icon="pi pi-check"
+                                size="small"
+                                (onClick)="saveComment(project)">
+                            </p-button>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </p-card>
+            </p-accordioncontent>
+        </p-accordionpanel>
+        }
+    </p-accordion>
+    }
+
+    <!-- Empty State -->
+    @if (!loading && projectStatuses.length === 0) {
+    <p-card>
+        <div style="text-align: center; padding: 3rem 1rem;">
+            <i class="pi pi-info-circle" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
+            <h3 style="margin: 1rem 0;">No Active Projects</h3>
+            <p style="color: var(--text-color-secondary);">
+                There are no active projects to display status for.
+            </p>
+        </div>
+    </p-card>
+    }
+
+    <!-- Tasks Modal -->
+    <p-dialog 
+        [(visible)]="showTasksModal"
+        [header]="'Tasks - ' + modalProjectName"
+        [modal]="true"
+        [style]="{width: '900px'}"
+        [maximizable]="true">
+        <p-table 
+            [value]="modalTasks"
+            [paginator]="true"
+            [rows]="10"
+            styleClass="p-datatable-sm"
+            responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>Title</th>
+                    <th style="width: 100px;">State</th>
+                    <th style="width: 150px;">Assigned To</th>
+                    <th style="width: 150px;">Sub Activity</th>
+                    <th style="width: 100px;">Hours</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-task>
+                <tr>
+                    <td>{{ task.id }}</td>
+                    <td>{{ task.title }}</td>
+                    <td>
+                        <p-tag 
+                            [value]="task.state"
+                            [attr.severity]="getTaskStateSeverity(task.state)">
+                        </p-tag>
+                    </td>
+                    <td>{{ task.assignedTo }}</td>
+                    <td>{{ task.subActivity || '-' }}</td>
+                    <td>{{ task.completedWork || 0 }}h</td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem;">
+                        No tasks available
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-dialog>
+
+    <!-- Rework Chart Modal -->
+    <p-dialog 
+        [(visible)]="showReworkChartModal"
+        [header]="'Rework Analysis - ' + reworkChartData?.projectName"
+        [modal]="true"
+        [style]="{width: '800px'}"
+        [maximizable]="true"
+        (onHide)="closeReworkChartModal()">
+        <div class="chart-container">
+            <canvas id="reworkChartCanvas"></canvas>
+        </div>
+    </p-dialog>
+</div>
+

@@ -1,0 +1,530 @@
+<div class="projects-container">
+    <p-toast></p-toast>
+    <p-confirmDialog></p-confirmDialog>
+
+    <!-- Header Section -->
+    <div class="header-section">
+        <div>
+            <h1 class="page-title">
+                <i class="pi pi-folder"></i> Project Management
+            </h1>
+            <p class="page-subtitle">Manage and track all your projects</p>
+        </div>
+        <div class="header-actions">
+            <p-button 
+                [label]="syncing ? 'Syncing...' : 'Sync DevOps'"
+                icon="pi pi-sync"
+                [loading]="syncing"
+                [disabled]="syncing"
+                (onClick)="syncWithDevOps()"
+                styleClass="btn-sync">
+            </p-button>
+            <p-button 
+                *ngIf="devOpsProjectsToImport.length > 0"
+                [label]="'Import All (' + devOpsProjectsToImport.length + ')'"
+                icon="pi pi-cloud-download"
+                [loading]="syncing"
+                [disabled]="devOpsProjectsToImport.length === 0 || syncing"
+                (onClick)="importAllDevOpsProjects()"
+                severity="success">
+            </p-button>
+            <p-button 
+                label="New Project"
+                icon="pi pi-plus"
+                (onClick)="openAddModal()">
+            </p-button>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-grid">
+        <p-card styleClass="stat-card primary">
+            <div class="stat-content">
+                <div class="stat-icon">
+                    <i class="pi pi-chart-bar"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ projects.length }}</div>
+                    <div class="stat-label">Total Projects</div>
+                </div>
+            </div>
+        </p-card>
+        <p-card styleClass="stat-card success">
+            <div class="stat-content">
+                <div class="stat-icon">
+                    <i class="pi pi-check-circle"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ (projects | filter: 'isActive': true).length }}</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+            </div>
+        </p-card>
+        <p-card styleClass="stat-card warning">
+            <div class="stat-content">
+                <div class="stat-icon">
+                    <i class="pi pi-times-circle"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ (projects | filter: 'isActive': false).length }}</div>
+                    <div class="stat-label">Inactive Projects</div>
+                </div>
+            </div>
+        </p-card>
+    </div>
+
+    <!-- Search and Filter -->
+    <p-card>
+        <div class="filter-controls">
+            <span class="p-input-icon-left" style="flex: 1;">
+               
+                <input 
+                    pInputText 
+                    type="text" 
+                    [(ngModel)]="searchQuery"
+                    (ngModelChange)="onSearchChange()"
+                    placeholder="Search projects..."
+                    style="width: 100%;" />
+            </span>
+
+            <div class="filter-buttons">
+                <p-button 
+                    label="All"
+                    [text]="filterStatus !== 'All'"
+                    [raised]="filterStatus === 'All'"
+                    (onClick)="filterStatus = 'All'; onFilterChange()"
+                    size="small">
+                </p-button>
+                <p-button 
+                    label="Active"
+                    [text]="filterStatus !== 'Active'"
+                    [raised]="filterStatus === 'Active'"
+                    (onClick)="filterStatus = 'Active'; onFilterChange()"
+                    size="small">
+                </p-button>
+                <p-button 
+                    label="Inactive"
+                    [text]="filterStatus !== 'Inactive'"
+                    [raised]="filterStatus === 'Inactive'"
+                    (onClick)="filterStatus = 'Inactive'; onFilterChange()"
+                    size="small">
+                </p-button>
+            </div>
+        </div>
+    </p-card>
+
+    <!-- Projects Table -->
+    <p-card styleClass="mt-4">
+        <p-table 
+            [value]="filteredProjects" 
+            [loading]="loading"
+            styleClass="p-datatable-sm"
+            responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Project Name</th>
+                    <th>Manager</th>
+                    <th>Status</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>DevOps</th>
+                    <th style="width: 250px;">Actions</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-project>
+                <tr [class.inactive-row]="!project.isActive">
+                    <td><strong>{{ project.projectName }}</strong></td>
+                    <td>{{ project.projectManagerName }}</td>
+                    <td>
+                        <p-tag 
+                            [value]="project.isActive ? 'Active' : 'Inactive'"
+                            [attr.severity]="getStatusSeverity(project.isActive)">
+                        </p-tag>
+                    </td>
+                    <td>{{ project.startDate ? (project.startDate | date:'MMM d, yyyy') : '-' }}</td>
+                    <td>{{ project.endDate ? (project.endDate | date:'MMM d, yyyy') : '-' }}</td>
+                    <td>
+                        <a *ngIf="project.devOpsProjectUrl" 
+                           [href]="project.devOpsProjectUrl" 
+                           target="_blank"
+                           class="devops-link">
+                            <i class="pi pi-external-link"></i> Open
+                        </a>
+                        <span *ngIf="!project.devOpsProjectUrl">-</span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <p-button 
+                                *ngIf="project.devOpsProjectId"
+                                icon="pi pi-sync"
+                                (onClick)="updateFromDevOps(project)"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="info"
+                                size="small"
+                                [attr.pTooltip]="'Update from DevOps'">
+                            </p-button>
+                            <p-button 
+                                icon="pi pi-eye"
+                                (onClick)="viewProjectDetails(project)"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="info"
+                                size="small"
+                                [attr.pTooltip]="'View Details'">
+                            </p-button>
+                            <p-button 
+                                *ngIf="project.projectId"
+                                icon="pi pi-cog"
+                                [routerLink]="['/project-hub', project.projectId]"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="secondary"
+                                size="small"
+                                [attr.pTooltip]="'Project Hub'">
+                            </p-button>
+                            <p-button 
+                                *ngIf="project.projectId"
+                                icon="pi pi-pencil"
+                                (onClick)="openEditModal(project)"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="'warning'"
+                                size="small"
+                                [attr.pTooltip]="'Edit'">
+                            </p-button>
+                            <p-button 
+                                *ngIf="project.projectId"
+                                [icon]="project.isActive ? 'pi pi-ban' : 'pi pi-check'"
+                                (onClick)="toggleProjectStatus(project)"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="project.isActive ? 'danger' : 'success'"
+                                size="small"
+                                [attr.pTooltip]="project.isActive ? 'Deactivate' : 'Activate'">
+                            </p-button>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 3rem;">
+                        <i class="pi pi-folder-open" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
+                        <h3>No Projects Found</h3>
+                        <p style="color: var(--text-color-secondary);">
+                            <span *ngIf="searchQuery">Try adjusting your search criteria</span>
+                            <span *ngIf="!searchQuery">Sync with DevOps to import projects</span>
+                        </p>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-card>
+
+    <!-- Add/Edit Modal -->
+    <p-dialog 
+        [(visible)]="showAddEditModal"
+        [header]="isEditMode ? 'Edit Project' : 'Create New Project'"
+        [modal]="true"
+        [style]="{width: '800px'}"
+        [maximizable]="true">
+        <form (ngSubmit)="saveProject()">
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="projectName">Project Name *</label>
+                    <input 
+                        pInputText 
+                        id="projectName"
+                        [(ngModel)]="newProject.projectName"
+                        name="projectName"
+                        placeholder="e.g., E-Commerce Platform"
+                        required
+                        style="width: 100%;" />
+                </div>
+
+                <div class="form-field">
+                    <label for="projectManager">Project Manager *</label>
+                    <input 
+                        pInputText 
+                        id="projectManager"
+                        [(ngModel)]="newProject.projectManagerName"
+                        name="projectManager"
+                        placeholder="e.g., John Doe"
+                        required
+                        style="width: 100%;" />
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="dashboardUrl">Dashboard URL</label>
+                <input 
+                    pInputText 
+                    id="dashboardUrl"
+                    [(ngModel)]="newProject.dashboardUrl"
+                    name="dashboardUrl"
+                    placeholder="https://..."
+                    style="width: 100%;" />
+            </div>
+
+            <div class="form-field">
+                <label for="description">Description</label>
+                <textarea 
+                    pTextarea
+                    id="description"
+                    [(ngModel)]="newProject.description"
+                    name="description"
+                    rows="3"
+                    placeholder="Brief description of the project..."
+                    style="width: 100%;"></textarea>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="startDate">Start Date</label>
+                    <input 
+                        pInputText 
+                        type="date"
+                        id="startDate"
+                        [(ngModel)]="newProject.startDate"
+                        name="startDate"
+                        style="width: 100%;" />
+                </div>
+
+                <div class="form-field">
+                    <label for="endDate">End Date</label>
+                    <input 
+                        pInputText 
+                        type="date"
+                        id="endDate"
+                        [(ngModel)]="newProject.endDate"
+                        name="endDate"
+                        style="width: 100%;" />
+                </div>
+            </div>
+
+            <div class="form-field">
+                <p-checkbox 
+                    [(ngModel)]="newProject.isActive"
+                    [binary]="true"
+                    inputId="isActive"
+                    name="isActive"
+                    label="Is Active">
+                </p-checkbox>
+            </div>
+
+            <!-- Technologies Management (only in Edit Mode) -->
+            <div class="form-field" *ngIf="isEditMode && newProject.projectId">
+                <label><i class="pi pi-desktop"></i> Technologies</label>
+                
+                <div *ngIf="loadingProjectTechnologies" style="text-align: center; padding: 2rem;">
+                    <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
+                </div>
+                
+                <div *ngIf="!loadingProjectTechnologies">
+                    <!-- Assigned Technologies -->
+                    <div *ngIf="projectTechnologies.length > 0" class="tech-list">
+                        <p-card *ngFor="let tech of projectTechnologies" styleClass="tech-card">
+                            <div class="tech-item">
+                                <i class="pi pi-code"></i>
+                                <div class="tech-details">
+                                    <strong>{{ tech.TechnologyName }}</strong>
+                                    <p *ngIf="tech.Description">{{ tech.Description }}</p>
+                                </div>
+                                <p-button 
+                                    icon="pi pi-times"
+                                    (onClick)="removeTechnology(tech.TechnologyId)"
+                                    [text]="true"
+                                    [rounded]="true"
+                                    severity="danger"
+                                    size="small">
+                                </p-button>
+                            </div>
+                        </p-card>
+                    </div>
+                    
+                    <!-- Add Technology -->
+                    <div *ngIf="getAvailableTechnologies().length > 0" class="add-section">
+                        <label>Add Technology</label>
+                        <div class="add-grid">
+                            <p-button 
+                                *ngFor="let tech of getAvailableTechnologies()" 
+                                [label]="tech.technologyName"
+                                icon="pi pi-plus"
+                                (onClick)="addTechnology(tech.technologyId)"
+                                [text]="true"
+                                size="small">
+                            </p-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Members Management (only in Edit Mode) -->
+            <div class="form-field" *ngIf="isEditMode && newProject.projectId">
+                <label><i class="pi pi-users"></i> Team Members</label>
+                
+                <div *ngIf="loadingProjectTeamMembers" style="text-align: center; padding: 2rem;">
+                    <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
+                </div>
+                
+                <div *ngIf="!loadingProjectTeamMembers">
+                    <!-- Assigned Team Members -->
+                    <div *ngIf="projectTeamMembers.length > 0" class="team-list">
+                        <p-card *ngFor="let member of projectTeamMembers" styleClass="member-card">
+                            <div class="member-item">
+                                <div class="member-avatar">
+                                    {{ member.FullName.charAt(0) || '?' }}
+                                </div>
+                                <div class="member-details">
+                                    <strong>{{ member.FullName }}</strong>
+                                    <p>{{ member.Title }}</p>
+                                </div>
+                                <div class="member-inputs">
+                                    <input 
+                                        pInputText 
+                                        [(ngModel)]="teamMemberRoles[member.TeamMemberId]"
+                                        (change)="updateTeamMemberRole(member.TeamMemberId, teamMemberRoles[member.TeamMemberId])"
+                                        [ngModelOptions]="{standalone: true}"
+                                        placeholder="Role"
+                                        style="width: 150px;" />
+                                    <input 
+                                        pInputText 
+                                        type="number" 
+                                        [(ngModel)]="teamMemberAllocations[member.TeamMemberId]"
+                                        (change)="updateTeamMemberAllocation(member.TeamMemberId, teamMemberAllocations[member.TeamMemberId])"
+                                        [ngModelOptions]="{standalone: true}"
+                                        placeholder="100"
+                                        min="0"
+                                        max="100"
+                                        style="width: 80px;" />
+                                    <span>%</span>
+                                </div>
+                                <p-button 
+                                    icon="pi pi-times"
+                                    (onClick)="removeTeamMember(member.TeamMemberId)"
+                                    [text]="true"
+                                    [rounded]="true"
+                                    severity="danger"
+                                    size="small">
+                                </p-button>
+                            </div>
+                        </p-card>
+                    </div>
+                    
+                    <!-- Add Team Member -->
+                    <div *ngIf="getAvailableTeamMembers().length > 0" class="add-section">
+                        <label>Add Team Member</label>
+                        <div class="add-grid">
+                            <p-button 
+                                *ngFor="let member of getAvailableTeamMembers()" 
+                                [label]="member.fullName"
+                                icon="pi pi-user-plus"
+                                (onClick)="addTeamMember(member.teamMemberId)"
+                                [text]="true"
+                                size="small">
+                            </p-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <p-button 
+                    label="Cancel"
+                    (onClick)="closeModal()"
+                    [text]="true"
+                    severity="secondary">
+                </p-button>
+                <p-button 
+                    [label]="isEditMode ? 'Update' : 'Create'"
+                    [icon]="isEditMode ? 'pi pi-save' : 'pi pi-plus'"
+                    type="submit">
+                </p-button>
+            </div>
+        </form>
+    </p-dialog>
+
+    <!-- Detail Modal -->
+    <p-dialog 
+        [(visible)]="showDetailModal"
+        header="Project Details"
+        [modal]="true"
+        [style]="{width: '700px'}"
+        [maximizable]="true">
+        <div *ngIf="selectedProject" class="detail-content">
+            <div class="detail-header">
+                <h2>{{ selectedProject.projectName }}</h2>
+                <p>
+                    <i class="pi pi-user"></i> {{ selectedProject.projectManagerName }}
+                    <p-tag 
+                        [value]="selectedProject.isActive ? 'Active' : 'Inactive'"
+                        [attr.severity]="getStatusSeverity(selectedProject.isActive)"
+                        styleClass="ml-2">
+                    </p-tag>
+                </p>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedProject.description">
+                <h4><i class="pi pi-align-left"></i> Description</h4>
+                <p>{{ selectedProject.description }}</p>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedProject.dashboardUrl">
+                <h4><i class="pi pi-link"></i> Dashboard</h4>
+                <a [href]="selectedProject.dashboardUrl" target="_blank">
+                    {{ selectedProject.dashboardUrl }}
+                </a>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-section" *ngIf="selectedProject.startDate">
+                    <h4><i class="pi pi-calendar"></i> Start Date</h4>
+                    <p>{{ selectedProject.startDate | date:'MMM d, yyyy' }}</p>
+                </div>
+
+                <div class="detail-section" *ngIf="selectedProject.endDate">
+                    <h4><i class="pi pi-flag"></i> End Date</h4>
+                    <p>{{ selectedProject.endDate | date:'MMM d, yyyy' }}</p>
+                </div>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedProject.technologies && selectedProject.technologies.length > 0">
+                <h4><i class="pi pi-desktop"></i> Technologies</h4>
+                <div class="tags-list">
+                    <p-tag *ngFor="let tech of selectedProject.technologies" [value]="tech.technologyName"></p-tag>
+                </div>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedProject.teamMembers && selectedProject.teamMembers.length > 0">
+                <h4><i class="pi pi-users"></i> Team Members</h4>
+                <div class="members-list">
+                    <p-card *ngFor="let member of selectedProject.teamMembers" styleClass="member-card-small">
+                        <div class="member-info">
+                            <div class="member-avatar">{{ member.teamMember?.fullName?.charAt(0) || '?' }}</div>
+                            <div>
+                                <strong>{{ member.teamMember?.fullName }}</strong>
+                                <p>{{ member.role || member.teamMember?.title }}</p>
+                            </div>
+                        </div>
+                    </p-card>
+                </div>
+            </div>
+        </div>
+
+        <ng-template pTemplate="footer">
+            <p-button 
+                label="Close"
+                (onClick)="closeModal()"
+                [text]="true"
+                severity="secondary">
+            </p-button>
+            <p-button 
+                label="Edit Project"
+                icon="pi pi-pencil"
+                (onClick)="openEditModal(selectedProject!); closeModal()">
+            </p-button>
+        </ng-template>
+    </p-dialog>
+</div>
+

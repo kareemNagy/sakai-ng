@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { StyleClassModule } from 'primeng/styleclass';
 import { AppConfigurator } from './app.configurator';
 import { LayoutService } from '../service/layout.service';
+import { TodoService } from '../../core/services/todo.service';
 
 @Component({
     selector: 'app-topbar',
@@ -33,11 +34,15 @@ import { LayoutService } from '../service/layout.service';
                         />
                     </g>
                 </svg>
-                <span>SAKAI</span>
+                <span>LD - Management</span>
             </a>
         </div>
 
         <div class="layout-topbar-actions">
+            <button type="button" class="layout-topbar-action layout-topbar-action-highlight" (click)="openTodoPanel()">
+                <i class="pi pi-check-square"></i>
+                <span class="hidden sm:inline">Todos</span>
+            </button>
             <div class="layout-config-menu">
                 <button type="button" class="layout-topbar-action" (click)="toggleDarkMode()">
                     <i [ngClass]="{ 'pi ': true, 'pi-moon': layoutService.isDarkTheme(), 'pi-sun': !layoutService.isDarkTheme() }"></i>
@@ -84,9 +89,13 @@ import { LayoutService } from '../service/layout.service';
 export class AppTopbar {
     items!: MenuItem[];
 
-    constructor(public layoutService: LayoutService) {}
+    constructor(public layoutService: LayoutService, private readonly todoService: TodoService) {}
 
     toggleDarkMode() {
         this.layoutService.layoutConfig.update((state) => ({ ...state, darkTheme: !state.darkTheme }));
+    }
+
+    openTodoPanel(): void {
+        this.todoService.openTodoPanel();
     }
 }

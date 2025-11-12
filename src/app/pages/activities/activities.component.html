@@ -1,0 +1,399 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="activities-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Activity Management</h1>
+            <p class="page-subtitle">Organize and manage activities and sub-activities</p>
+        </div>
+        <p-button 
+            label="New Activity" 
+            icon="pi pi-plus" 
+            (onClick)="openAddActivityDialog()"
+            styleClass="p-button-raised">
+        </p-button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid stats-grid">
+        <div class="col-12 md:col-4">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon total">
+                        <i class="pi pi-chart-bar"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Activities</p>
+                        <p class="stat-value">{{ activities.length }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-4">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon active">
+                        <i class="pi pi-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Active Activities</p>
+                        <p class="stat-value">{{ getActiveActivitiesCount() }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-4">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon sub">
+                        <i class="pi pi-link"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Sub-Activities</p>
+                        <p class="stat-value">{{ getAllSubActivitiesCount() }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+    </div>
+
+    <!-- Controls Section -->
+    <p-card>
+        <div class="controls-section">
+            <span class="p-input-icon-left search-input">
+                <i class="pi pi-search"></i>
+                <input 
+                    pInputText 
+                    type="text" 
+                    [(ngModel)]="searchQuery"
+                    (ngModelChange)="onSearchChange()"
+                    placeholder="Search activities or sub-activities..." />
+            </span>
+
+            <div class="filter-tabs">
+                @for (status of ['All', 'Active', 'Inactive']; track status) {
+                <p-button 
+                    [label]="status"
+                    [outlined]="filterStatus !== status"
+                    [text]="filterStatus !== status"
+                    (onClick)="filterStatus = status; onFilterChange()"
+                    [styleClass]="filterStatus === status ? 'p-button-sm' : 'p-button-sm p-button-text'">
+                </p-button>
+                }
+            </div>
+        </div>
+
+        <!-- Activities List -->
+        @if (!loading && filteredActivities.length > 0) {
+        <div class="activities-list">
+            @for (activity of filteredActivities; track activity.activityId) {
+            <p-card class="activity-card" [class.inactive-card]="!activity.isActive">
+                <div class="activity-header">
+                    <div class="activity-main" (click)="toggleActivity(activity)">
+                        <i [class]="'pi ' + (activity.expanded ? 'pi-chevron-down' : 'pi-chevron-right')" class="expand-icon"></i>
+                        <div class="activity-info">
+                            <h3 class="activity-name">
+                                {{ activity.activityName }}
+                                @if (!activity.isActive) {
+                                <p-tag 
+                                    [value]="getStatusLabel(activity.isActive)" 
+                                    [attr.severity]="getSeverity(activity.isActive)"
+                                    styleClass="ml-2">
+                                </p-tag>
+                                }
+                            </h3>
+                            @if (activity.description) {
+                            <p class="activity-description">
+                                {{ activity.description }}
+                            </p>
+                            }
+                            <div class="activity-meta">
+                                <span class="meta-item">
+                                    <i class="pi pi-link"></i>
+                                    {{ getTotalSubActivitiesCount(activity) }} sub-activities
+                                </span>
+                                <span class="meta-item">
+                                    <i class="pi pi-check"></i>
+                                    {{ getActiveSubActivitiesCount(activity) }} active
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="activity-actions">
+                        <p-button 
+                            icon="pi pi-plus" 
+                            (onClick)="openAddSubActivityDialog(activity)"
+                            [text]="true"
+                            [rounded]="true"
+                            size="small"
+                            [attr.pTooltip]="'Add Sub-Activity'">
+                        </p-button>
+                        <p-button 
+                            icon="pi pi-pencil" 
+                            (onClick)="openEditActivityDialog(activity)"
+                            [text]="true"
+                            [rounded]="true"
+                            [attr.severity]="'warning'"
+                            size="small"
+                            [attr.pTooltip]="'Edit'">
+                        </p-button>
+                        <p-button 
+                            [icon]="activity.isActive ? 'pi pi-pause' : 'pi pi-play'" 
+                            (onClick)="toggleActivityStatus(activity)"
+                            [text]="true"
+                            [rounded]="true"
+                            [attr.severity]="activity.isActive ? 'warning' : 'success'"
+                            size="small"
+                            [attr.pTooltip]="activity.isActive ? 'Deactivate' : 'Activate'">
+                        </p-button>
+                        <p-button 
+                            icon="pi pi-trash" 
+                            (onClick)="deleteActivity(activity)"
+                            [text]="true"
+                            [rounded]="true"
+                            [attr.severity]="'danger'"
+                            size="small"
+                            [attr.pTooltip]="'Delete'">
+                        </p-button>
+                    </div>
+                </div>
+
+                <!-- Sub-Activities List -->
+                @if (activity.expanded) {
+                <div class="sub-activities-container">
+                    @if (!activity.subActivities || activity.subActivities.length === 0) {
+                    <div class="no-sub-activities">
+                        <p>No sub-activities yet</p>
+                        <p-button 
+                            label="Add First Sub-Activity" 
+                            icon="pi pi-plus" 
+                            (onClick)="openAddSubActivityDialog(activity)"
+                            size="small">
+                        </p-button>
+                    </div>
+                    }
+
+                    @for (subActivity of activity.subActivities; track subActivity.subActivityId) {
+                    <div class="sub-activity-item" 
+                         [class.inactive-sub]="!subActivity.isActive">
+                        <div class="sub-activity-content">
+                            <div class="sub-activity-indicator"></div>
+                            <div class="sub-activity-info">
+                                <h4 class="sub-activity-name">
+                                    {{ subActivity.subActivityName }}
+                                    @if (!subActivity.isActive) {
+                                    <p-tag 
+                                        [value]="getStatusLabel(subActivity.isActive)" 
+                                        [attr.severity]="getSeverity(subActivity.isActive)"
+                                        styleClass="ml-2 tag-small">
+                                    </p-tag>
+                                    }
+                                </h4>
+                                @if (subActivity.description) {
+                                <p class="sub-activity-description">
+                                    {{ subActivity.description }}
+                                </p>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="sub-activity-actions">
+                            <p-button 
+                                icon="pi pi-pencil" 
+                                (onClick)="openEditSubActivityDialog(subActivity)"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="'warning'"
+                                size="small"
+                                [attr.pTooltip]="'Edit'">
+                            </p-button>
+                            <p-button 
+                                [icon]="subActivity.isActive ? 'pi pi-pause' : 'pi pi-play'" 
+                                (onClick)="toggleSubActivityStatus(subActivity)"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="subActivity.isActive ? 'warning' : 'success'"
+                                size="small"
+                                [attr.pTooltip]="subActivity.isActive ? 'Deactivate' : 'Activate'">
+                            </p-button>
+                            <p-button 
+                                icon="pi pi-trash" 
+                                (onClick)="deleteSubActivity(subActivity)"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="'danger'"
+                                size="small"
+                                [attr.pTooltip]="'Delete'">
+                            </p-button>
+                        </div>
+                    </div>
+                    }
+                </div>
+                }
+            </p-card>
+            }
+        </div>
+        }
+
+        <!-- Loading State -->
+        @if (loading) {
+        <div class="loading-state">
+            <i class="pi pi-spin pi-spinner" style="font-size: 3rem;"></i>
+            <p>Loading activities...</p>
+        </div>
+        }
+
+        <!-- Empty State -->
+        @if (!loading && filteredActivities.length === 0) {
+        <div class="empty-state">
+            <i class="pi pi-chart-bar" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
+            <h3>No Activities Found</h3>
+            <p>
+                @if (searchQuery) {
+                <span>Try adjusting your search criteria</span>
+                }
+                @if (!searchQuery) {
+                <span>Get started by creating your first activity</span>
+                }
+            </p>
+            @if (!searchQuery) {
+            <p-button 
+                label="Create Activity" 
+                icon="pi pi-plus" 
+                (onClick)="openAddActivityDialog()">
+            </p-button>
+            }
+        </div>
+        }
+    </p-card>
+</div>
+
+<!-- Activity Dialog -->
+<p-dialog 
+    [(visible)]="showActivityDialog" 
+    [header]="(isEditMode ? 'Edit' : 'Create New') + ' Activity'"
+    [modal]="true"
+    [style]="{width: '500px'}"
+    [draggable]="false"
+    [resizable]="false">
+    
+    <div class="form-content">
+        <div class="field">
+            <label for="activityName">Activity Name *</label>
+            <input 
+                id="activityName"
+                type="text" 
+                pInputText 
+                [(ngModel)]="newActivity.activityName"
+                placeholder="e.g., Front-End Development"
+                class="w-full" />
+        </div>
+
+        <div class="field">
+            <label for="activityDescription">Description</label>
+            <textarea 
+                id="activityDescription"
+                pInputTextarea 
+                [(ngModel)]="newActivity.description"
+                rows="3"
+                placeholder="Brief description of the activity..."
+                class="w-full">
+            </textarea>
+        </div>
+
+        <div class="field-checkbox">
+            <p-checkbox 
+                [(ngModel)]="newActivity.isActive" 
+                [binary]="true"
+                inputId="activityIsActive">
+            </p-checkbox>
+            <label for="activityIsActive">Is Active</label>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button 
+            label="Cancel" 
+            icon="pi pi-times" 
+            (onClick)="closeActivityDialog()"
+            [text]="true">
+        </p-button>
+        <p-button 
+            [label]="isEditMode ? 'Update' : 'Create'" 
+            icon="pi pi-check" 
+            (onClick)="saveActivity()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+
+<!-- Sub-Activity Dialog -->
+<p-dialog 
+    [(visible)]="showSubActivityDialog" 
+    [header]="(isEditMode ? 'Edit' : 'Create New') + ' Sub-Activity'"
+    [modal]="true"
+    [style]="{width: '500px'}"
+    [draggable]="false"
+    [resizable]="false">
+    
+    <div class="form-content">
+        @if (selectedActivity && !isEditMode) {
+        <div class="field">
+            <label>Parent Activity</label>
+            <div class="parent-activity-display">
+                <i class="pi pi-sitemap"></i>
+                {{ selectedActivity.activityName }}
+            </div>
+        </div>
+        }
+
+        <div class="field">
+            <label for="subActivityName">Sub-Activity Name *</label>
+            <input 
+                id="subActivityName"
+                type="text" 
+                pInputText 
+                [(ngModel)]="newSubActivity.subActivityName"
+                placeholder="e.g., Bug Fixing"
+                class="w-full" />
+        </div>
+
+        <div class="field">
+            <label for="subActivityDescription">Description</label>
+            <textarea 
+                id="subActivityDescription"
+                pInputTextarea 
+                [(ngModel)]="newSubActivity.description"
+                rows="3"
+                placeholder="Brief description of the sub-activity..."
+                class="w-full">
+            </textarea>
+        </div>
+
+        <div class="field-checkbox">
+            <p-checkbox 
+                [(ngModel)]="newSubActivity.isActive" 
+                [binary]="true"
+                inputId="subActivityIsActive">
+            </p-checkbox>
+            <label for="subActivityIsActive">Is Active</label>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button 
+            label="Cancel" 
+            icon="pi pi-times" 
+            (onClick)="closeSubActivityDialog()"
+            [text]="true">
+        </p-button>
+        <p-button 
+            [label]="isEditMode ? 'Update' : 'Create'" 
+            icon="pi pi-check" 
+            (onClick)="saveSubActivity()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+

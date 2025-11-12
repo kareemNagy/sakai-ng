@@ -1,0 +1,299 @@
+<p-toast></p-toast>
+
+<p-drawer
+    [(visible)]="panelVisible"
+    position="right"
+    styleClass="!w-full md:!w-80 lg:!w-[40rem] todo-sidebar"
+   
+    (onHide)="closePanel()"
+    [modal]="false"
+    [showCloseIcon]="false"
+>
+    <div class="todo-panel">
+        <div class="todo-panel__header">
+            <div>
+                <h2>Team Todo</h2>
+                <p>Track personal and project follow-ups</p>
+            </div>
+
+            <div class="todo-panel__header-actions">
+                <p-button
+                    type="button"
+                    label="Add Todo"
+                    icon="pi pi-plus"
+                    size="small"
+                    (onClick)="openAddDialog()"
+                ></p-button>
+                <p-button
+                    type="button"
+                    icon="pi pi-times"
+                    [text]="true"
+                    severity="secondary"
+                    (onClick)="closePanel()"
+                ></p-button>
+            </div>
+        </div>
+
+        <div class="todo-panel__filters">
+            <div class="filter-row">
+                <span class="p-input-icon-left w-full">
+                    <input
+                        pInputText
+                        type="text"
+                        placeholder="Search todos..."
+                        [(ngModel)]="searchTerm"
+                        (ngModelChange)="applyFilters()"
+                        class="w-full"
+                    />
+                </span>
+            </div>
+
+            <div class="filter-row">
+                <p-select
+                    [options]="[
+                        { label: 'All Statuses', value: 'All' },
+                        { label: 'Pending', value: 'Pending' },
+                        { label: 'In Progress', value: 'In Progress' },
+                        { label: 'Completed', value: 'Completed' }
+                    ]"
+                    [(ngModel)]="statusFilter"
+                    (ngModelChange)="applyFilters()"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Status"
+                    class="w-full"
+                ></p-select>
+
+                <p-select
+                    [options]="[
+                        { label: 'All Priorities', value: 'All' },
+                        { label: 'High', value: 'High' },
+                        { label: 'Medium', value: 'Medium' },
+                        { label: 'Low', value: 'Low' }
+                    ]"
+                    [(ngModel)]="priorityFilter"
+                    (ngModelChange)="applyFilters()"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Priority"
+                    class="w-full"
+                ></p-select>
+            </div>
+
+            <div class="filter-row">
+                <p-checkbox
+                    [(ngModel)]="showImportantOnly"
+                    [binary]="true"
+                    inputId="importantFilter"
+                    (ngModelChange)="applyFilters()"
+                ></p-checkbox>
+                <label for="importantFilter">Important only</label>
+
+                <p-button
+                    type="button"
+                    label="Reset"
+                    icon="pi pi-refresh"
+                    [text]="true"
+                    (onClick)="resetFilters()"
+                ></p-button>
+            </div>
+        </div>
+
+        <div class="todo-panel__content">
+            @if (filteredTodos.length > 0) {
+            <div class="todo-list">
+                @for (todo of filteredTodos; track todo.id) {
+                <p-card styleClass="todo-card">
+                    <div class="todo-card__header">
+                        <div class="todo-card__title-group">
+                            <h3>{{ todo.title }}</h3>
+                            <div class="todo-card__meta">
+                                <p-tag
+                                    [value]="todo.priority || 'Medium'"
+                                    [attr.severity]="getPrioritySeverity(todo.priority)"
+                                ></p-tag>
+                                <p-tag
+                                    [value]="todo.status || 'Pending'"
+                                    [attr.severity]="getStatusSeverity(todo.status)"
+                                ></p-tag>
+                                @if (todo.isImportant) {
+                                <p-tag value="Important" [attr.severity]="'warning'"></p-tag>
+                                }
+                            </div>
+                        </div>
+                        <div class="todo-card__actions">
+                            <p-button
+                                type="button"
+                                icon="pi pi-star"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="todo.isImportant ? 'warning' : 'contrast'"
+                                 [attr.pTooltip]="todo.isImportant ? 'Unstar' : 'Mark as important'"
+                                (onClick)="toggleImportant(todo)"
+                            ></p-button>
+                            <p-button
+                                type="button"
+                                icon="pi pi-check"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="success"
+                                 [attr.pTooltip]="'Mark complete'"
+                                [disabled]="todo.status === 'Completed'"
+                                (onClick)="markComplete(todo)"
+                            ></p-button>
+                            <p-button
+                                type="button"
+                                icon="pi pi-trash"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="danger"
+                                 [attr.pTooltip]="'Delete todo'"
+                                (onClick)="deleteTodo(todo)"
+                            ></p-button>
+                        </div>
+                    </div>
+
+                    @if (todo.description) {
+                    <p class="todo-card__description">
+                        {{ todo.description }}
+                    </p>
+                    }
+
+                    <div class="todo-card__footer">
+                        @if (todo.dueDate) {
+                        <span class="todo-card__footer-item">
+                            <i class="pi pi-calendar"></i>
+                            {{ todo.dueDate | date : 'mediumDate' }}
+                        </span>
+                        }
+                        @if (todo.teamMember?.fullName) {
+                        <span class="todo-card__footer-item">
+                            <i class="pi pi-user"></i>
+                            {{ todo.teamMember?.fullName }}
+                        </span>
+                        }
+                    </div>
+                </p-card>
+                }
+            </div>
+            } @else {
+            <div class="todo-empty-state">
+                <i class="pi pi-clipboard"></i>
+                <h3>No todos found</h3>
+                <p>Try adjusting your filters or add a new todo.</p>
+                <p-button
+                    type="button"
+                    label="Add Todo"
+                    icon="pi pi-plus"
+                    (onClick)="openAddDialog()"
+                ></p-button>
+            </div>
+            }
+        </div>
+    </div>
+</p-drawer>
+
+<p-dialog
+    [(visible)]="displayAddDialog"
+    header="Add Todo"
+    [modal]="true"
+    [style]="{ width: '500px' }"
+    [breakpoints]="{ '960px': '90vw' }"
+    (onHide)="saving = false"
+>
+    <div class="todo-form">
+        <div class="form-field">
+            <label for="todoTitle">Title *</label>
+            <input
+                id="todoTitle"
+                type="text"
+                pInputText
+                [(ngModel)]="newTodo.title"
+                placeholder="Todo title"
+                class="w-full"
+            />
+        </div>
+
+        <div class="form-field">
+            <label for="todoDescription">Description</label>
+            <textarea
+                id="todoDescription"
+                pTextarea
+                rows="3"
+                [(ngModel)]="newTodo.description"
+                placeholder="Add description or context"
+                class="w-full"
+            ></textarea>
+        </div>
+
+        <div class="form-field">
+            <label>Priority</label>
+            <p-select
+                [options]="[
+                    { label: 'High', value: 'High' },
+                    { label: 'Medium', value: 'Medium' },
+                    { label: 'Low', value: 'Low' }
+                ]"
+                [(ngModel)]="newTodo.priority"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full"
+            ></p-select>
+        </div>
+
+        <div class="form-field">
+            <label>Status</label>
+            <p-select
+                [options]="[
+                    { label: 'Pending', value: 'Pending' },
+                    { label: 'In Progress', value: 'In Progress' },
+                    { label: 'Completed', value: 'Completed' }
+                ]"
+                [(ngModel)]="newTodo.status"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full"
+            ></p-select>
+        </div>
+
+        <div class="form-field">
+            <label>Assign To</label>
+            <p-select
+                [options]="teamMembers"
+                [(ngModel)]="newTodo.teamMemberId"
+                optionLabel="fullName"
+                optionValue="teamMemberId"
+                placeholder="Select team member"
+                class="w-full"
+            ></p-select>
+        </div>
+
+        <div class="form-field checkbox-field">
+            <p-checkbox
+                [(ngModel)]="newTodo.isImportant"
+                [binary]="true"
+                inputId="newTodoImportant"
+            ></p-checkbox>
+            <label for="newTodoImportant">Mark as important</label>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button
+            type="button"
+            label="Cancel"
+            icon="pi pi-times"
+            [text]="true"
+            severity="secondary"
+            (onClick)="displayAddDialog = false"
+        ></p-button>
+        <p-button
+            type="button"
+            label="Create"
+            icon="pi pi-check"
+            [loading]="saving"
+            (onClick)="saveTodo()"
+        ></p-button>
+    </ng-template>
+</p-dialog>
+

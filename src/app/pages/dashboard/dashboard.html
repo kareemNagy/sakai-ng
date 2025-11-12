@@ -1,0 +1,101 @@
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Dashboard Overview</h1>
+            <p class="dashboard-subtitle">Welcome back! Here's what's happening with your projects.</p>
+        </div>
+        <div class="dashboard-date">
+            <i class="pi pi-calendar"></i>
+            <span>{{ currentDate | date:'EEEE, MMMM d, yyyy' }}</span>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (loading) {
+    <div class="loading-container">
+        <div class="grid">
+            <div class="col-12 md:col-6">
+                <p-skeleton height="150px" borderRadius="16px"></p-skeleton>
+            </div>
+            <div class="col-12 md:col-6">
+                <p-skeleton height="150px" borderRadius="16px"></p-skeleton>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- Stats Cards -->
+    @if (!loading) {
+    <div class="grid">
+        <!-- Projects Card -->
+        <div class="col-12 md:col-6">
+            <p-card class="stat-card projects-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <p class="stat-label">Projects</p>
+                        <p class="stat-value">{{ stats.totalProjects }}</p>
+                        <p class="stat-badge active">
+                            <i class="pi pi-chart-line"></i>
+                            Active
+                        </p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="pi pi-folder"></i>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+
+        <!-- Team Members Card -->
+        <div class="col-12 md:col-6">
+            <p-card class="stat-card team-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <p class="stat-label">Team</p>
+                        <p class="stat-value">{{ stats.totalTeamMembers }}</p>
+                        <p class="stat-badge members">
+                            <i class="pi pi-users"></i>
+                            Members
+                        </p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="pi pi-users"></i>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+    </div>
+    }
+
+    <!-- Note: Task-related metrics removed -->
+    <!-- Use Azure DevOps API for real-time task metrics -->
+
+    <!-- Quick Actions -->
+    <div class="grid">
+        <div class="col-12 md:col-6">
+            <p-card class="action-card" [routerLink]="['/projects']">
+                <div class="action-content">
+                    <div class="action-icon">📁</div>
+                    <div class="action-info">
+                        <h3>Manage Projects</h3>
+                        <p>View and manage all projects</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+
+        <div class="col-12 md:col-6">
+            <p-card class="action-card" [routerLink]="['/team']">
+                <div class="action-content">
+                    <div class="action-icon">👥</div>
+                    <div class="action-info">
+                        <h3>Team Members</h3>
+                        <p>Manage your team</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+    </div>
+</div>
+

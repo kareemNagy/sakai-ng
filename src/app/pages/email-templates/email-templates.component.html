@@ -1,0 +1,409 @@
+<div class="email-templates-container">
+    <p-toast></p-toast>
+    <p-confirmDialog></p-confirmDialog>
+
+    <!-- Header -->
+    <div class="header-section">
+        <div>
+            <h1 class="page-title">
+                <i class="pi pi-envelope"></i> Email Templates
+            </h1>
+            <p class="page-subtitle">Manage email templates for notifications and reports</p>
+        </div>
+        <p-button
+            label="Add Template"
+            icon="pi pi-plus"
+            (onClick)="openAddModal()">
+        </p-button>
+    </div>
+
+    <!-- Filters -->
+    <p-card styleClass="mb-4">
+        <div class="filters-section">
+            <div class="search-box">
+                <span class="p-input-icon-left" style="flex: 1;">
+                    <i class="pi pi-search"></i>
+                    <input
+                        pInputText
+                        type="text"
+                        [(ngModel)]="searchQuery"
+                        (ngModelChange)="onSearchChange()"
+                        placeholder="Search templates..."
+                        style="width: 100%;"
+                    />
+                </span>
+            </div>
+
+            <div class="filter-group">
+                <label>Status:</label>
+                <p-select
+                    [options]="statusOptions"
+                    [(ngModel)]="filterStatus"
+                    (ngModelChange)="onFilterChange()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [style]="{'min-width':'150px'}">
+                </p-select>
+            </div>
+        </div>
+    </p-card>
+
+    <!-- Loading State -->
+    @if (loading) {
+    <div class="loading-state">
+        <i class="pi pi-spin pi-spinner" style="font-size: 3rem;"></i>
+        <p>Loading templates...</p>
+    </div>
+    }
+
+    <!-- Templates Grid -->
+    @if (!loading && filteredTemplates.length > 0) {
+    <div class="templates-grid">
+        @for (template of filteredTemplates; track template.emailTemplateId) {
+        <p-card>
+            <div class="template-header">
+                <div class="template-info">
+                    <h3 class="template-name">{{ template.templateName }}</h3>
+                    <p-tag
+                        [value]="template.isActive ? 'Active' : 'Inactive'"
+                        [attr.severity]="template.isActive ? 'success' : 'secondary'">
+                    </p-tag>
+                </div>
+                <div class="template-actions">
+                    <p-button
+                        icon="pi pi-eye"
+                        (onClick)="viewTemplate(template)"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        severity="info"
+                        [attr.pTooltip]="'View'">
+                    </p-button>
+                    <p-button
+                        icon="pi pi-pencil"
+                        (onClick)="openEditModal(template)"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        severity="secondary"
+                        [attr.pTooltip]="'Edit'">
+                    </p-button>
+                    <p-button
+                        [icon]="template.isActive ? 'pi pi-eye-slash' : 'pi pi-eye'"
+                        (onClick)="toggleStatus(template)"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        [attr.severity]="template.isActive ? 'warning' : 'success'"
+                        [attr.pTooltip]="template.isActive ? 'Deactivate' : 'Activate'">
+                    </p-button>
+                    <p-button
+                        icon="pi pi-trash"
+                        (onClick)="deleteTemplate(template)"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        severity="danger"
+                        [attr.pTooltip]="'Delete'">
+                    </p-button>
+                </div>
+            </div>
+
+            <div class="template-content">
+                <div class="template-field">
+                    <label><i class="pi pi-tag"></i> Subject:</label>
+                    <p>{{ template.subject }}</p>
+                </div>
+                @if (template.description) {
+                <div class="template-field">
+                    <label><i class="pi pi-info-circle"></i> Description:</label>
+                    <p>{{ template.description }}</p>
+                </div>
+                }
+                <div class="template-meta">
+                    @if (template.createdAt) {
+                    <span>
+                        <i class="pi pi-calendar-plus"></i> Created: {{ template.createdAt | date: 'short' }}
+                    </span>
+                    }
+                    @if (template.updatedAt) {
+                    <span>
+                        <i class="pi pi-calendar"></i> Updated: {{ template.updatedAt | date: 'short' }}
+                    </span>
+                    }
+                </div>
+            </div>
+        </p-card>
+        }
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!loading && filteredTemplates.length === 0) {
+    <div class="empty-state">
+        <p-card>
+            <div style="text-align: center; padding: 2rem 1rem;">
+                <i class="pi pi-inbox" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
+                <h3 style="margin: 1rem 0;">No Templates Found</h3>
+                <p style="color: var(--text-color-secondary);">
+                    {{ searchQuery || filterStatus !== 'All' ? 'Try adjusting your filters' : 'Get started by creating your first email template' }}
+                </p>
+                @if (!searchQuery && filterStatus === 'All') {
+                <p-button
+                    label="Create Template"
+                    icon="pi pi-plus"
+                    styleClass="mt-3"
+                    (onClick)="openAddModal()">
+                </p-button>
+                }
+            </div>
+        </p-card>
+    </div>
+    }
+</div>
+
+<!-- Add/Edit Modal -->
+<p-dialog
+    [(visible)]="showAddModal"
+    [header]="(isEditMode ? 'Edit' : 'Add') + ' Email Template'"
+    [modal]="true"
+    [style]="{width: '900px', maxHeight: '90vh'}"
+    [draggable]="false"
+    [resizable]="false"
+    [maximizable]="true">
+
+    <div class="template-form">
+        <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+                <label for="templateName">
+                    Template Name <span style="color: var(--red-500);">*</span>
+                </label>
+                <input
+                    pInputText
+                    id="templateName"
+                    type="text"
+                    [(ngModel)]="newTemplate.templateName"
+                    placeholder="e.g., Weekly Effort Report"
+                    style="width: 100%;"
+                />
+            </div>
+
+            <div class="form-group" style="flex: 1;">
+                <label for="isActive">Status</label>
+                <p-select
+                    [(ngModel)]="newTemplate.isActive"
+                    [options]="[
+                        { label: 'Active', value: true },
+                        { label: 'Inactive', value: false }
+                    ]"
+                    optionLabel="label"
+                    optionValue="value"
+                    [style]="{'width':'100%'}">
+                </p-select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="subject">
+                Email Subject <span style="color: var(--red-500);">*</span>
+            </label>
+            <input
+                pInputText
+                id="subject"
+                type="text"
+                [(ngModel)]="newTemplate.subject"
+                [placeholder]="subjectPlaceholder"
+                style="width: 100%;"
+            />
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea
+                pTextarea
+                id="description"
+                [(ngModel)]="newTemplate.description"
+                rows="2"
+                placeholder="Brief description of this template's purpose"
+                style="width: 100%;">
+            </textarea>
+        </div>
+
+        <!-- Available Variables -->
+        <div class="variables-section">
+            <h4><i class="pi pi-code"></i> Available Variables</h4>
+            <div class="variables-grid">
+                @for (variable of availableVariables; track variable.name) {
+                <p-button
+                    [label]="variable.name"
+                    (onClick)="insertVariable(variable.name)"
+                    [attr.pTooltip]="variable.description"
+                    size="small"
+                    severity="secondary"
+                    [text]="true">
+                </p-button>
+                }
+            </div>
+            <p class="help-text">
+                <i class="pi pi-info-circle"></i>
+                Click a variable to insert it into the HTML content.
+            </p>
+        </div>
+
+        <div class="form-group">
+            <label for="htmlContent">
+                HTML Content <span style="color: var(--red-500);">*</span>
+            </label>
+            <p-editor
+                [(ngModel)]="newTemplate.htmlContent"
+                [style]="{'height':'300px'}">
+                <ng-template pTemplate="header">
+                    <span class="ql-formats">
+                        <select class="ql-header">
+                            <option value="1">Heading 1</option>
+                            <option value="2">Heading 2</option>
+                            <option value="3">Heading 3</option>
+                            <option selected>Normal</option>
+                        </select>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-bold" type="button"></button>
+                        <button class="ql-italic" type="button"></button>
+                        <button class="ql-underline" type="button"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-list" value="ordered" type="button"></button>
+                        <button class="ql-list" value="bullet" type="button"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-link" type="button"></button>
+                        <button class="ql-image" type="button"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-code-block" type="button"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-clean" type="button"></button>
+                    </span>
+                </ng-template>
+            </p-editor>
+        </div>
+
+        <div class="form-group">
+            <label for="textContent">Plain Text Content</label>
+            <textarea
+                pTextarea
+                id="textContent"
+                [(ngModel)]="newTemplate.textContent"
+                rows="8"
+                placeholder="Enter plain text version (fallback for email clients that don't support HTML)"
+                style="width: 100%;">
+            </textarea>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button
+            label="Cancel"
+            icon="pi pi-times"
+            (onClick)="closeAddModal()"
+            [text]="true"
+            severity="secondary">
+        </p-button>
+        <p-button
+            [label]="isEditMode ? 'Update Template' : 'Create Template'"
+            icon="pi pi-check"
+            (onClick)="saveTemplate()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+
+<!-- Detail Modal -->
+<p-dialog
+    [(visible)]="showDetailModal"
+    [header]="selectedTemplate?.templateName"
+    [modal]="true"
+    [style]="{width: '900px', maxHeight: '90vh'}"
+    [draggable]="false"
+    [resizable]="false"
+    [maximizable]="true">
+
+    @if (selectedTemplate) {
+    <div class="template-details">
+        <div class="detail-section">
+            <h3><i class="pi pi-info-circle"></i> Template Information</h3>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <label>Template Name:</label>
+                    <span>{{ selectedTemplate.templateName }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Status:</label>
+                    <p-tag
+                        [value]="selectedTemplate.isActive ? 'Active' : 'Inactive'"
+                        [attr.severity]="selectedTemplate.isActive ? 'success' : 'secondary'">
+                    </p-tag>
+                </div>
+                <div class="detail-item full-width">
+                    <label>Subject:</label>
+                    <span>{{ selectedTemplate.subject }}</span>
+                </div>
+                @if (selectedTemplate.description) {
+                <div class="detail-item full-width">
+                    <label>Description:</label>
+                    <span>{{ selectedTemplate.description }}</span>
+                </div>
+                }
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3><i class="pi pi-code"></i> HTML Preview</h3>
+            <div class="html-preview" [innerHTML]="getSafeHtml(selectedTemplate.htmlContent)"></div>
+        </div>
+
+        @if (selectedTemplate.textContent) {
+        <div class="detail-section">
+            <h3><i class="pi pi-align-left"></i> Plain Text Content</h3>
+            <pre class="text-preview">{{ selectedTemplate.textContent }}</pre>
+        </div>
+        }
+
+        @if (selectedTemplate.createdAt || selectedTemplate.updatedAt) {
+        <div class="detail-section">
+            <h3><i class="pi pi-calendar"></i> Metadata</h3>
+            <div class="detail-grid">
+                @if (selectedTemplate.createdAt) {
+                <div class="detail-item">
+                    <label>Created:</label>
+                    <span>{{ selectedTemplate.createdAt | date: 'medium' }}</span>
+                </div>
+                }
+                @if (selectedTemplate.updatedAt) {
+                <div class="detail-item">
+                    <label>Last Updated:</label>
+                    <span>{{ selectedTemplate.updatedAt | date: 'medium' }}</span>
+                </div>
+                }
+            </div>
+        </div>
+        }
+    </div>
+    }
+
+    <ng-template pTemplate="footer">
+        <p-button
+            label="Close"
+            icon="pi pi-times"
+            (onClick)="closeDetailModal()"
+            [text]="true"
+            severity="secondary">
+        </p-button>
+        <p-button
+            label="Edit Template"
+            icon="pi pi-pencil"
+            (onClick)="openEditModal(selectedTemplate!); closeDetailModal()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+

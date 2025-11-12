@@ -1,0 +1,269 @@
+<div class="task-templates-container">
+    <p-toast></p-toast>
+    <p-confirmDialog></p-confirmDialog>
+
+    <!-- Header -->
+    <div class="header-section">
+        <div>
+            <h1 class="page-title">
+                <i class="pi pi-list-check"></i> Task Templates
+            </h1>
+            <p class="page-subtitle">Manage reusable task templates for quick import</p>
+        </div>
+        <p-button 
+            label="Create Template"
+            icon="pi pi-plus"
+            (onClick)="openCreateModal()">
+        </p-button>
+    </div>
+
+    <!-- Filters -->
+    <p-card styleClass="mb-4">
+        <div class="filters-section">
+            <div class="search-box">
+                <span class="p-input-icon-left" style="flex: 1;">
+                    <i class="pi pi-search"></i>
+                    <input
+                        pInputText
+                        type="text"
+                        [(ngModel)]="searchQuery"
+                        (ngModelChange)="onSearchChange()"
+                        placeholder="Search templates..."
+                        style="width: 100%;"
+                    />
+                </span>
+            </div>
+
+            <div class="filter-group">
+                <label>Status:</label>
+                <p-select
+                    [options]="statusOptions"
+                    [(ngModel)]="filterStatus"
+                    (ngModelChange)="onFilterChange()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [style]="{'min-width':'150px'}">
+                </p-select>
+            </div>
+
+            <div class="filter-stats">
+                Showing {{ filteredTemplates.length }} of {{ taskTemplates.length }} templates
+            </div>
+        </div>
+    </p-card>
+
+    <!-- Loading State -->
+    @if (loading) {
+    <div class="loading-state">
+        <i class="pi pi-spin pi-spinner" style="font-size: 3rem;"></i>
+        <p>Loading templates...</p>
+    </div>
+    }
+
+    <!-- Templates Grid -->
+    @if (!loading && filteredTemplates.length > 0) {
+    <div class="templates-grid">
+        @for (template of filteredTemplates; track template.taskTemplateId) {
+        <p-card [styleClass]="template.isActive ? '' : 'inactive-template'">
+            <div class="template-header">
+                <h3 class="template-title">{{ template.title }}</h3>
+                <div class="template-actions">
+                    <p-button
+                        icon="pi pi-pencil"
+                        (onClick)="openEditModal(template)"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        severity="secondary"
+                        [attr.pTooltip]="'Edit'">
+                    </p-button>
+                    <p-button
+                        [icon]="template.isActive ? 'pi pi-eye-slash' : 'pi pi-eye'"
+                        (onClick)="toggleStatus(template)"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        [attr.severity]="template.isActive ? 'warning' : 'success'"
+                        [attr.pTooltip]="template.isActive ? 'Deactivate' : 'Activate'">
+                    </p-button>
+                    <p-button
+                        icon="pi pi-trash"
+                        (onClick)="deleteTemplate(template)"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        severity="danger"
+                        [attr.pTooltip]="'Delete'">
+                    </p-button>
+                </div>
+            </div>
+
+            @if (template.description) {
+            <p class="template-description">{{ template.description }}</p>
+            }
+
+            <div class="template-meta">
+                <div class="meta-item">
+                    <i class="pi pi-briefcase"></i>
+                    <span>{{ template.activity }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="pi pi-check-square"></i>
+                    <span>{{ template.subActivity }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="pi pi-clock"></i>
+                    <span>{{ template.originalEstimate }}h</span>
+                </div>
+            </div>
+
+            @if (!template.isActive) {
+            <div class="template-status">
+                <p-tag value="Inactive" severity="secondary"></p-tag>
+            </div>
+            }
+        </p-card>
+        }
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!loading && filteredTemplates.length === 0) {
+    <div class="empty-state">
+        <p-card>
+            <div style="text-align: center; padding: 2rem 1rem;">
+                <i class="pi pi-inbox" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
+                <h3 style="margin: 1rem 0;">No templates found</h3>
+                <p style="color: var(--text-color-secondary);">
+                    {{ searchQuery || filterStatus !== 'All' ? 'Try adjusting your search or filters' : 'Create your first template to get started' }}
+                </p>
+                @if (!searchQuery && filterStatus === 'All') {
+                <p-button
+                    label="Create Template"
+                    icon="pi pi-plus"
+                    styleClass="mt-3"
+                    (onClick)="openCreateModal()">
+                </p-button>
+                }
+            </div>
+        </p-card>
+    </div>
+    }
+</div>
+
+<!-- Add/Edit Modal -->
+<p-dialog
+    [(visible)]="showModal"
+    [header]="(isEditMode ? 'Edit' : 'Create') + ' Task Template'"
+    [modal]="true"
+    [style]="{width: '600px'}"
+    [draggable]="false"
+    [resizable]="false">
+    
+    <div class="template-form">
+        <div class="form-group">
+            <label for="title">
+                Title <span style="color: var(--red-500);">*</span>
+            </label>
+            <input
+                pInputText
+                id="title"
+                type="text"
+                [(ngModel)]="currentTemplate.title"
+                placeholder="Enter task title"
+                style="width: 100%;"
+            />
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea
+                pTextarea
+                id="description"
+                [(ngModel)]="currentTemplate.description"
+                placeholder="Enter task description (optional)"
+                rows="3"
+                style="width: 100%;">
+            </textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+                <label for="activity">
+                    Activity <span style="color: var(--red-500);">*</span>
+                </label>
+                <p-select
+                    [(ngModel)]="currentTemplate.activity"
+                    [options]="activities"
+                    optionLabel="activityName"
+                    optionValue="activityName"
+                    placeholder="Select Activity"
+                    (onChange)="onActivityChange()"
+                    [style]="{'width':'100%'}">
+                </p-select>
+            </div>
+
+            <div class="form-group" style="flex: 1;">
+                <label for="subActivity">
+                    Sub Activity <span style="color: var(--red-500);">*</span>
+                </label>
+                <p-select
+                    [(ngModel)]="currentTemplate.subActivity"
+                    [options]="subActivities"
+                    optionLabel="subActivityName"
+                    optionValue="subActivityName"
+                    placeholder="Select Sub Activity"
+                    [disabled]="!currentTemplate.activity || subActivities.length === 0"
+                    [style]="{'width':'100%'}">
+                </p-select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+                <label for="originalEstimate">
+                    Original Estimate (hours)
+                </label>
+                <p-inputNumber
+                    [(ngModel)]="currentTemplate.originalEstimate"
+                    [min]="0"
+                    [step]="0.5"
+                    [showButtons]="true"
+                    mode="decimal"
+                    [minFractionDigits]="1"
+                    [maxFractionDigits]="1"
+                    placeholder="0.0"
+                    [style]="{'width':'100%'}">
+                </p-inputNumber>
+            </div>
+
+            <div class="form-group" style="flex: 1; display: flex; align-items: flex-end;">
+                <div class="checkbox-wrapper">
+                    <p-checkbox
+                        [(ngModel)]="currentTemplate.isActive"
+                        [binary]="true"
+                        inputId="isActive">
+                    </p-checkbox>
+                    <label for="isActive" style="margin-left: 0.5rem; cursor: pointer;">Active</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button
+            label="Cancel"
+            icon="pi pi-times"
+            (onClick)="closeModal()"
+            [text]="true"
+            severity="secondary">
+        </p-button>
+        <p-button
+            [label]="isEditMode ? 'Update' : 'Create'"
+            icon="pi pi-check"
+            (onClick)="saveTemplate()"
+            [disabled]="!isFormValid()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+

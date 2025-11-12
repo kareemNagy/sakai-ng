@@ -1,0 +1,248 @@
+<div class="project-kpi-container">
+    <p-toast></p-toast>
+
+    <!-- Header -->
+    <div class="header-section">
+        <div>
+            <h1 class="page-title">
+                <i class="pi pi-chart-bar"></i> Project KPI
+            </h1>
+            <p class="page-subtitle">Track and analyze project performance metrics</p>
+        </div>
+        <div class="header-actions">
+            <p-button 
+                label="Fetch KPI Data"
+                icon="pi pi-refresh"
+                [loading]="loading"
+                [disabled]="!selectedProjectId || loading"
+                (onClick)="fetchProjectKpi()">
+            </p-button>
+            <p-button 
+                label="Export CSV"
+                icon="pi pi-download"
+                [disabled]="workItemsDetails.length === 0"
+                (onClick)="exportToCSV()"
+                severity="secondary">
+            </p-button>
+        </div>
+    </div>
+
+    <!-- Project Selection -->
+    <p-card styleClass="mb-4">
+        <div style="max-width: 400px;">
+            <label for="project" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                Select Project *
+            </label>
+            <p-select 
+                inputId="project"
+                [options]="projects"
+                [(ngModel)]="selectedProjectId"
+                (ngModelChange)="onProjectChange()"
+                placeholder="Select a project"
+                optionLabel="projectName"
+                optionValue="projectId"
+                [style]="{'width':'100%'}">
+            </p-select>
+        </div>
+    </p-card>
+
+    <!-- KPI Metrics Cards -->
+    @if (workItemsDetails.length > 0) {
+    <div class="kpi-metrics-grid">
+        <p-card styleClass="kpi-card">
+            <div class="kpi-content">
+                <div class="kpi-icon estimate">
+                    <i class="pi pi-clock"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Estimate</div>
+                    <div class="kpi-value">{{ formatKpiValue(kpiMetrics.totalEstimate) }}h</div>
+                </div>
+            </div>
+        </p-card>
+
+        <p-card styleClass="kpi-card">
+            <div class="kpi-content">
+                <div class="kpi-icon actual">
+                    <i class="pi pi-check-circle"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Actual</div>
+                    <div class="kpi-value">{{ formatKpiValue(kpiMetrics.totalActual) }}h</div>
+                </div>
+            </div>
+        </p-card>
+
+        <p-card styleClass="kpi-card">
+            <div class="kpi-content">
+                <div class="kpi-icon deviation" [class.negative]="kpiMetrics.deviation > 0">
+                    <i class="pi pi-chart-line"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Deviation</div>
+                    <div class="kpi-value">{{ kpiMetrics.deviation.toFixed(2) }}%</div>
+                </div>
+            </div>
+        </p-card>
+
+        <p-card styleClass="kpi-card">
+            <div class="kpi-content">
+                <div class="kpi-icon coding">
+                    <i class="pi pi-code"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Coding</div>
+                    <div class="kpi-value">{{ formatKpiValue(kpiMetrics.totalCoding) }}h</div>
+                </div>
+            </div>
+        </p-card>
+
+        <p-card styleClass="kpi-card">
+            <div class="kpi-content">
+                <div class="kpi-icon bugfixing">
+                    <i class="pi pi-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Total Bug Fixing</div>
+                    <div class="kpi-value">{{ formatKpiValue(kpiMetrics.totalBugFixing) }}h</div>
+                </div>
+            </div>
+        </p-card>
+
+        <p-card styleClass="kpi-card">
+            <div class="kpi-content">
+                <div class="kpi-icon rework">
+                    <i class="pi pi-refresh"></i>
+                </div>
+                <div>
+                    <div class="kpi-label">Rework %</div>
+                    <div class="kpi-value">{{ kpiMetrics.reworkPercentage.toFixed(2) }}%</div>
+                </div>
+            </div>
+        </p-card>
+    </div>
+    }
+
+    <!-- Area Path Filters -->
+    @if (workItemsDetails.length > 0 && getUniqueAreaPaths().length > 0) {
+    <p-card styleClass="mb-4">
+        <div class="filter-section">
+            <div class="filter-header">
+                <h3><i class="pi pi-filter"></i> Filter Charts by Area Path</h3>
+                <p-button 
+                    label="Clear Filters"
+                    icon="pi pi-times"
+                    [text]="true"
+                    size="small"
+                    (onClick)="clearKpiFilters()"
+                    [disabled]="kpiFilters.areaPath.length === 0">
+                </p-button>
+            </div>
+            <div class="filter-checkboxes">
+                @for (areaPath of getUniqueAreaPaths(); track areaPath) {
+                <div class="filter-checkbox-item">
+                    <p-checkbox 
+                        [binary]="true"
+                        [ngModel]="isKpiFilterSelected(areaPath)"
+                        (ngModelChange)="toggleKpiFilterSelection(areaPath)"
+                        [inputId]="'area-' + areaPath">
+                    </p-checkbox>
+                    <label [for]="'area-' + areaPath" class="checkbox-label">{{ areaPath }}</label>
+                </div>
+                }
+            </div>
+        </div>
+    </p-card>
+    }
+
+    <!-- Charts Grid -->
+    @if (workItemsDetails.length > 0) {
+    <div class="charts-grid">
+        <p-card styleClass="chart-card">
+            <div class="chart-container">
+                <canvas #estimateActualChart></canvas>
+            </div>
+        </p-card>
+
+        <p-card styleClass="chart-card">
+            <div class="chart-container">
+                <canvas #codingBugFixingChart></canvas>
+            </div>
+        </p-card>
+
+        <p-card styleClass="chart-card">
+            <div class="chart-container">
+                <canvas #reworkChart></canvas>
+            </div>
+        </p-card>
+
+        <p-card styleClass="chart-card">
+            <div class="chart-container">
+                <canvas #subActivityChart></canvas>
+            </div>
+        </p-card>
+    </div>
+    }
+
+    <!-- Work Items Table -->
+    @if (workItemsDetails.length > 0) {
+    <p-card styleClass="mt-4">
+        <h3 style="margin-bottom: 1rem;">
+            <i class="pi pi-list"></i> Work Items Details
+        </h3>
+        <p-table 
+            [value]="filteredWorkItems" 
+            [paginator]="true"
+            [rows]="10"
+            [rowsPerPageOptions]="[10, 25, 50]"
+            styleClass="p-datatable-sm"
+            responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>Title</th>
+                    <th style="width: 120px;">State</th>
+                    <th style="width: 150px;">Assigned To</th>
+                    <th style="width: 150px;">Activity</th>
+                    <th style="width: 150px;">Sub Activity</th>
+                    <th style="width: 100px;">Estimate</th>
+                    <th style="width: 100px;">Actual</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-item>
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.title }}</td>
+                    <td>{{ item.state }}</td>
+                    <td>{{ item.assignedTo }}</td>
+                    <td>{{ item.activity || '-' }}</td>
+                    <td>{{ item.subActivity || '-' }}</td>
+                    <td>{{ item.originalEstimate || 0 }}h</td>
+                    <td>{{ item.completedWork || 0 }}h</td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem;">
+                        No work items match the current filters
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-card>
+    }
+
+    <!-- Empty State -->
+    @if (!loading && workItemsDetails.length === 0 && selectedProjectId) {
+    <p-card>
+        <div style="text-align: center; padding: 3rem 1rem;">
+            <i class="pi pi-info-circle" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
+            <h3 style="margin: 1rem 0;">No Data Available</h3>
+            <p style="color: var(--text-color-secondary);">
+                Click "Fetch KPI Data" to load work items from Azure DevOps
+            </p>
+        </div>
+    </p-card>
+    }
+</div>
+

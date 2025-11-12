@@ -11,6 +11,7 @@ import { LayoutService } from '../service/layout.service';
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: '[app-menuitem]',
+    standalone: true,
     imports: [CommonModule, RouterModule, RippleModule],
     template: `
         <ng-container>

@@ -1,0 +1,383 @@
+<div class="task-import-container">
+    <p-toast></p-toast>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i class="pi pi-file-import"></i> Task Import</h1>
+        <p>Import tasks from templates into user stories</p>
+    </div>
+
+    <!-- Project Filter -->
+    <p-card styleClass="mb-4">
+        <div class="controls-section">
+            <div class="filter-group">
+                <label>
+                    <i class="pi pi-folder"></i> 
+                    Select Project
+                    <span class="required">*</span>
+                </label>
+                <div class="control-row">
+                    <p-select
+                        [(ngModel)]="selectedProjectId"
+                        [options]="projects"
+                        (ngModelChange)="onProjectChange()"
+                        optionLabel="projectName"
+                        optionValue="projectId"
+                        placeholder="Select a project..."
+                        [style]="{'width':'100%', 'max-width':'400px'}">
+                    </p-select>
+                    <p-button
+                        label="Sync User Stories"
+                        icon="pi pi-sync"
+                        [loading]="syncing"
+                        [disabled]="!selectedProject || syncing"
+                        (onClick)="syncUserStories()">
+                    </p-button>
+                </div>
+            </div>
+        </div>
+    </p-card>
+
+    <!-- Area Path Filter -->
+    @if (areaPaths.length > 0) {
+    <p-card styleClass="mb-4">
+        <div class="filter-group">
+            <label>
+                <i class="pi pi-filter"></i> Filter by Area Path
+            </label>
+            <div class="control-row">
+                <p-select
+                    [(ngModel)]="selectedAreaPath"
+                    [options]="areaPaths"
+                    (ngModelChange)="onAreaPathChange()"
+                    placeholder="All Area Paths"
+                    [style]="{'width':'100%', 'max-width':'400px'}">
+                </p-select>
+                @if (selectedAreaPath) {
+                <span class="results-count">
+                    <i class="pi pi-check-circle"></i> {{ userStories.length }} stories
+                </span>
+                }
+            </div>
+        </div>
+    </p-card>
+    }
+
+    <!-- Main Content -->
+    @if (selectedProject && selectedAreaPath && userStories.length > 0) {
+    <div class="main-content">
+        <div class="content-grid">
+            <!-- User Stories Section -->
+            <div class="user-stories-section">
+                <div class="section-header">
+                    <h2><i class="pi pi-book"></i> User Stories ({{ userStories.length }})</h2>
+                    <p>Drop tasks here to import them</p>
+                </div>
+
+                <div class="user-stories-list">
+                    @for (story of userStories; track story.userStoryId) {
+                    <p-card
+                        styleClass="user-story-card"
+                        [ngClass]="{'expanded': story.expanded}"
+                        (dragover)="onDragOver($event)"
+                        (drop)="onDrop($event, story)">
+                        
+                        <!-- Story Header -->
+                        <div class="story-header" (click)="toggleStory(story)">
+                            <div class="story-title-section">
+                                <i class="pi expand-icon" [ngClass]="story.expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                                <div class="story-title-content">
+                                    <span class="story-id">#{{ story.devOpsWorkItemId }}</span>
+                                    <h3>{{ story.title }}</h3>
+                                </div>
+                            </div>
+                            <div class="story-badges">
+                                @if (story.priority) {
+                                <p-tag
+                                    [value]="getPriorityLabel(story.priority)"
+                                    [attr.severity]="getPrioritySeverity(story.priority)">
+                                </p-tag>
+                                }
+                                <p-tag
+                                    [value]="story.status"
+                                    [attr.severity]="getStatusSeverity(story.status)">
+                                </p-tag>
+                            </div>
+                        </div>
+
+                        <!-- Story Content -->
+                        @if (story.expanded) {
+                        <div class="story-content">
+                            <div class="story-info">
+                                @if (story.assignedTo) {
+                                <span>
+                                    <i class="pi pi-user"></i> {{ story.assignedTo }}
+                                </span>
+                                }
+                                @if (story.storyPoints) {
+                                <span>
+                                    <i class="pi pi-chart-line"></i> {{ story.storyPoints }} pts
+                                </span>
+                                }
+                                @if (story.areaPath) {
+                                <span>
+                                    <i class="pi pi-sitemap"></i> {{ story.areaPath }}
+                                </span>
+                                }
+                            </div>
+
+                            <!-- Drop Zone for Tasks -->
+                            <div class="drop-zone" [ngClass]="{'has-tasks': story.draggedTasks.length > 0, 'empty': story.draggedTasks.length === 0}">
+                                @if (story.draggedTasks.length === 0) {
+                                <div class="drop-zone-empty">
+                                    <i class="pi pi-arrow-down"></i>
+                                    <p>Drag tasks here to add them</p>
+                                </div>
+                                }
+
+                                <!-- Dragged Tasks -->
+                                @if (story.draggedTasks.length > 0) {
+                                <div class="dragged-tasks-grid">
+                                    @for (task of story.draggedTasks; track $index) {
+                                    <p-card styleClass="task-card" (click)="$event.stopPropagation()">
+                                        <div class="card-header">
+                                            <i class="pi pi-check-square"></i>
+                                            <p-button
+                                                icon="pi pi-times"
+                                                [text]="true"
+                                                [rounded]="true"
+                                                severity="danger"
+                                                size="small"
+                                                (onClick)="removeTask(story, $index); $event.stopPropagation()">
+                                            </p-button>
+                                        </div>
+
+                                        <div class="card-body">
+                                            <!-- Title -->
+                                            <div class="form-field">
+                                                <label>Title <span class="required">*</span></label>
+                                                <input
+                                                    pInputText
+                                                    [(ngModel)]="task.title"
+                                                    [ngClass]="{'p-invalid': !task.title || task.title.trim() === ''}"
+                                                    placeholder="Task title (required)"
+                                                    (click)="$event.stopPropagation()"
+                                                    style="width: 100%;" />
+                                            </div>
+
+                                            <!-- Description -->
+                                            <div class="form-field">
+                                                <label>Description</label>
+                                                <textarea
+                                                    pTextarea
+                                                    [(ngModel)]="task.description"
+                                                    rows="2"
+                                                    placeholder="Optional"
+                                                    (click)="$event.stopPropagation()"
+                                                    style="width: 100%;">
+                                                </textarea>
+                                            </div>
+
+                                            <!-- Activity (Read-only) -->
+                                            <div class="form-field">
+                                                <label>Activity <span class="required">*</span></label>
+                                                <p-tag
+                                                    [value]="task.activity || 'Activity Required*'"
+                                                    [attr.severity]="!task.activity || task.activity.trim() === '' ? 'danger' : 'secondary'"
+                                                    styleClass="w-full">
+                                                </p-tag>
+                                            </div>
+
+                                            <!-- Sub Activity -->
+                                            <div class="form-field">
+                                                <label>Sub Activity <span class="required">*</span></label>
+                                                <p-select
+                                                    [(ngModel)]="task.subActivity"
+                                                    [options]="getSubActivitiesForActivity(task.activity)"
+                                                    optionLabel="subActivityName"
+                                                    optionValue="subActivityName"
+                                                    [ngClass]="{'p-invalid': !task.subActivity || task.subActivity.trim() === ''}"
+                                                    (onFocus)="loadSubActivitiesForActivity(task.activity)"
+                                                    placeholder="Select Sub Activity..."
+                                                    (click)="$event.stopPropagation()"
+                                                    [style]="{'width':'100%'}">
+                                                </p-select>
+                                            </div>
+
+                                            <!-- Estimate -->
+                                            <div class="form-field">
+                                                <label>Estimate (hours) <span class="required">*</span></label>
+                                                <p-inputNumber
+                                                    [(ngModel)]="task.originalEstimate"
+                                                    [ngClass]="{'p-invalid': !task.originalEstimate || task.originalEstimate <= 0}"
+                                                    [min]="0.5"
+                                                    [step]="0.5"
+                                                    [showButtons]="true"
+                                                    [minFractionDigits]="1"
+                                                    [maxFractionDigits]="1"
+                                                    placeholder="Enter hours"
+                                                    (click)="$event.stopPropagation()"
+                                                    styleClass="w-full">
+                                                </p-inputNumber>
+                                            </div>
+
+                                            <!-- Assigned To -->
+                                            <div class="form-field">
+                                                <label>Assigned To <span class="required">*</span></label>
+                                                <p-autoComplete
+                                                    [(ngModel)]="task.assignedTo"
+                                                    [suggestions]="filteredTeamMembers[getTaskKey(story.userStoryId, $index)] || []"
+                                                    (completeMethod)="searchTeamMembers($event, getTaskKey(story.userStoryId, $index))"
+                                                    [attr.field]="'email'"
+                                                    [ngClass]="{'p-invalid': !task.assignedTo || task.assignedTo.trim() === ''}"
+                                                    placeholder="Search team member (required)..."
+                                                    (click)="$event.stopPropagation()"
+                                                    styleClass="w-full"
+                                                    [dropdown]="true">
+                                                    <ng-template let-member pTemplate="item">
+                                                        <div class="member-item">
+                                                            <div class="member-name">{{ member.fullName }}</div>
+                                                            <div class="member-email">{{ member.email }}</div>
+                                                        </div>
+                                                    </ng-template>
+                                                </p-autoComplete>
+                                                @if (task.assignedTo) {
+                                                <div class="assigned-badge">
+                                                    <i class="pi pi-user-check"></i> {{ task.assignedTo }}
+                                                </div>
+                                                }
+                                            </div>
+
+                                            <!-- Validation Errors -->
+                                            @if (!isTaskValid(task)) {
+                                            <div class="validation-errors">
+                                                <p-tag
+                                                    [value]="getTaskValidationErrors(task).join(', ')"
+                                                    severity="danger"
+                                                    icon="pi pi-exclamation-triangle"
+                                                    styleClass="w-full">
+                                                </p-tag>
+                                            </div>
+                                            }
+                                        </div>
+
+                                        <div class="card-footer">
+                                            <p-button
+                                                label="Import"
+                                                icon="pi pi-upload"
+                                                [disabled]="!isTaskValid(task)"
+                                                (onClick)="importSingleTask(story, task, $index); $event.stopPropagation()"
+                                                styleClass="w-full"
+                                                size="small">
+                                            </p-button>
+                                        </div>
+                                    </p-card>
+                                    }
+                                </div>
+                                }
+                            </div>
+
+                            <!-- Import All Button -->
+                            @if (story.draggedTasks.length > 0) {
+                            <div class="story-actions">
+                                <p-button
+                                    [label]="story.importing ? 'Importing...' : 'Import All Tasks (' + story.draggedTasks.length + ')'"
+                                    icon="pi pi-file-import"
+                                    [loading]="story.importing"
+                                    [disabled]="story.importing || !canImportUserStory(story)"
+                                    (onClick)="importTasks(story); $event.stopPropagation()">
+                                </p-button>
+                                @if (!canImportUserStory(story)) {
+                                <span class="validation-warning">
+                                    <i class="pi pi-exclamation-circle"></i> Some tasks have missing required fields
+                                </span>
+                                }
+                            </div>
+                            }
+                        </div>
+                        }
+                    </p-card>
+                    }
+                </div>
+            </div>
+
+            <!-- Task Templates Section -->
+            <div class="task-templates-section">
+                <div class="section-header">
+                    <h2><i class="pi pi-list"></i> Task Templates ({{ taskTemplates.length }})</h2>
+                    <p>Drag tasks to user stories</p>
+                </div>
+
+                <div class="task-templates-list">
+                    @for (task of taskTemplates; track task.taskTemplateId ?? task.title) {
+                    <p-card
+                        styleClass="task-template-card"
+                        [draggable]="true"
+                        (dragstart)="onDragStart($event, task)">
+                        <div class="template-header">
+                            <i class="pi pi-bars drag-handle"></i>
+                            <h4>{{ task.title }}</h4>
+                        </div>
+                        
+                        @if (task.description) {
+                        <p class="template-description">
+                            {{ task.description }}
+                        </p>
+                        }
+                        
+                        <div class="template-meta">
+                            <p-tag icon="pi pi-folder" [value]="task.activity" severity="secondary"></p-tag>
+                            <p-tag icon="pi pi-check" [value]="task.subActivity" severity="info"></p-tag>
+                            <p-tag icon="pi pi-clock" [value]="task.originalEstimate + 'h'" severity="contrast"></p-tag>
+                        </div>
+                    </p-card>
+                    }
+
+                    @if (taskTemplates.length === 0) {
+                    <div class="empty-state">
+                        <i class="pi pi-inbox" style="font-size: 3rem;"></i>
+                        <p>No task templates available</p>
+                        <small>Create templates from the Task Templates page</small>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+    <!-- Empty State -->
+    @if (!syncing && (!selectedProject || (selectedProject && areaPaths.length === 0) || (areaPaths.length > 0 && !selectedAreaPath))) {
+    <p-card>
+        <div class="empty-state-main">
+            <i class="pi pi-filter" style="font-size: 3rem;"></i>
+            @if (!selectedProject) {
+            <h3>Select a Project</h3>
+            }
+            @if (selectedProject && areaPaths.length === 0) {
+            <h3>Sync User Stories</h3>
+            }
+            @if (areaPaths.length > 0 && !selectedAreaPath) {
+            <h3>Select Area Path</h3>
+            }
+            @if (!selectedProject) {
+            <p>Choose a project and click "Sync User Stories" to begin</p>
+            }
+            @if (selectedProject && areaPaths.length === 0) {
+            <p>Click the "Sync User Stories" button to load stories from DevOps</p>
+            }
+            @if (areaPaths.length > 0 && !selectedAreaPath) {
+            <p>Select an area path to view user stories</p>
+            }
+        </div>
+    </p-card>
+    }
+
+    <!-- Loading Overlay -->
+    @if (loading || syncing) {
+    <div class="loading-overlay">
+        <i class="pi pi-spin pi-spinner" style="font-size: 3rem;"></i>
+        <p>{{ loading ? 'Loading...' : 'Syncing user stories...' }}</p>
+    </div>
+    }
+</div>
+

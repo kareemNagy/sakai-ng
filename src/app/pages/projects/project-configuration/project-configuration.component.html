@@ -1,0 +1,175 @@
+<div class="configuration-container">
+    <p-toast></p-toast>
+
+    <!-- Header Section -->
+    <div class="header-section">
+        <h1 class="page-title">
+            <i class="pi pi-cog"></i> Project Hub
+        </h1>
+        <p class="page-subtitle">Manage environment links and project configuration</p>
+    </div>
+
+    <!-- Project Selection -->
+    <p-card styleClass="mb-4">
+        <div class="filter-group">
+            <label>
+                <i class="pi pi-folder"></i> 
+                Select Project
+                <span class="required">*</span>
+            </label>
+            <p-select
+                [(ngModel)]="selectedProjectId"
+                [options]="projects"
+                (ngModelChange)="onProjectChange()"
+                optionLabel="projectName"
+                optionValue="projectId"
+                placeholder="Select a project..."
+                [style]="{'width':'100%', 'max-width':'500px'}">
+            </p-select>
+        </div>
+    </p-card>
+
+    <!-- Loading State -->
+    @if (loading) {
+    <p-card>
+        <div class="loading-state">
+            <i class="pi pi-spin pi-spinner" style="font-size: 3rem;"></i>
+            <p>Loading configuration...</p>
+        </div>
+    </p-card>
+    }
+
+    <!-- No Project Selected State -->
+    @if (!loading && !selectedProjectId) {
+    <p-card>
+        <div class="empty-state">
+            <i class="pi pi-folder-open" style="font-size: 3rem;"></i>
+            <h3>Select a Project</h3>
+            <p>Please select a project from the dropdown above to manage its configuration</p>
+        </div>
+    </p-card>
+    }
+
+    <!-- Configuration Viewer/Editor -->
+    @if (!loading && selectedProjectId && configLoaded) {
+    <div>
+        <p-card>
+            <!-- Header -->
+            <div class="editor-header">
+                <div class="header-left">
+                    <h2 class="editor-title">
+                        <i class="pi pi-code"></i> 
+                        Configuration for: <strong>{{ projectName }}</strong>
+                    </h2>
+                    <p class="editor-subtitle">
+                        {{ isEditMode ? 'Edit environment links and configuration. Use markdown-style formatting.' : 'View environment links and project configuration.' }}
+                    </p>
+                </div>
+                <div class="header-actions">
+                    <p-button 
+                        [label]="isEditMode ? 'Preview' : 'Edit'"
+                        [icon]="isEditMode ? 'pi pi-eye' : 'pi pi-pencil'"
+                        [attr.severity]="isEditMode ? 'secondary' : 'primary'"
+                        (onClick)="toggleEditMode()">
+                    </p-button>
+                </div>
+            </div>
+
+            <!-- Preview Mode (Default) -->
+            @if (!isEditMode) {
+            <div class="preview-mode">
+                @if (!environmentConfig || environmentConfig.trim().length === 0) {
+                <div class="empty-config">
+                    <i class="pi pi-file" style="font-size: 3rem;"></i>
+                    <h3>No Configuration Yet</h3>
+                    <p>Click the "Edit" button to add environment links and configuration details.</p>
+                </div>
+                }
+                @if (environmentConfig && environmentConfig.trim().length > 0) {
+                <div class="preview-content" 
+                     [innerHTML]="getSafeHtml()">
+                </div>
+                }
+            </div>
+            }
+
+            <!-- Edit Mode -->
+            @if (isEditMode) {
+            <div class="edit-mode">
+                <!-- Rich Text Editor -->
+                <div class="editor-container">
+                    <p-editor 
+                        [(ngModel)]="environmentConfig"
+                        [style]="{'height':'400px'}"
+                        placeholder="Enter environment configuration here...
+
+Example:
+Development Environment
+API: https://dev-api.example.com
+Dashboard: https://dev-dashboard.example.com
+
+Production Environment
+API: https://api.example.com
+Dashboard: https://dashboard.example.com">
+                        <ng-template pTemplate="header">
+                            <span class="ql-formats">
+                                <select class="ql-header">
+                                    <option value="1">Heading 1</option>
+                                    <option value="2">Heading 2</option>
+                                    <option value="3">Heading 3</option>
+                                    <option selected>Normal</option>
+                                </select>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-bold" type="button"></button>
+                                <button class="ql-italic" type="button"></button>
+                                <button class="ql-underline" type="button"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-list" value="ordered" type="button"></button>
+                                <button class="ql-list" value="bullet" type="button"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-link" type="button"></button>
+                                <button class="ql-code-block" type="button"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-clean" type="button"></button>
+                            </span>
+                        </ng-template>
+                    </p-editor>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <p-button 
+                        label="Save Configuration"
+                        icon="pi pi-save"
+                        [loading]="saving"
+                        [disabled]="saving"
+                        (onClick)="saveConfiguration()">
+                    </p-button>
+                    <p-button 
+                        label="Clear"
+                        icon="pi pi-trash"
+                        severity="danger"
+                        [text]="true"
+                        [disabled]="saving"
+                        (onClick)="clearConfiguration()">
+                    </p-button>
+                    <p-button 
+                        label="Cancel"
+                        icon="pi pi-times"
+                        severity="secondary"
+                        [text]="true"
+                        [disabled]="saving"
+                        (onClick)="toggleEditMode()">
+                    </p-button>
+                </div>
+            </div>
+            }
+        </p-card>
+    </div>
+    }
+</div>
+

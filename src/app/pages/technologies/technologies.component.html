@@ -1,0 +1,331 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="technologies-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Technology Stack</h1>
+            <p class="page-subtitle">Manage your technology catalog</p>
+        </div>
+        <p-button 
+            label="New Technology" 
+            icon="pi pi-plus" 
+            (onClick)="openAddDialog()"
+            styleClass="p-button-raised">
+        </p-button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid stats-grid">
+        <div class="col-12 md:col-4">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon total">
+                        <i class="pi pi-box"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Technologies</p>
+                        <p class="stat-value">{{ technologies.length }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-4">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon active">
+                        <i class="pi pi-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Active</p>
+                        <p class="stat-value">{{ getActiveCount() }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-4">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon inactive">
+                        <i class="pi pi-pause-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Inactive</p>
+                        <p class="stat-value">{{ getInactiveCount() }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+    </div>
+
+    <!-- Controls Section -->
+    <p-card>
+        <div class="controls-section">
+            <span class="p-input-icon-left search-input">
+                <i class="pi pi-search"></i>
+                <input 
+                    pInputText 
+                    type="text" 
+                    [(ngModel)]="searchQuery"
+                    (ngModelChange)="onSearchChange()"
+                    placeholder="Search technologies..." />
+            </span>
+
+            <div class="filter-tabs">
+                @for (status of ['All', 'Active', 'Inactive']; track status) {
+                <p-button 
+                    [label]="status"
+                    [outlined]="filterStatus !== status"
+                    [text]="filterStatus !== status"
+                    (onClick)="filterStatus = status; onStatusFilterChange()"
+                    [styleClass]="filterStatus === status ? 'p-button-sm' : 'p-button-sm p-button-text'">
+                </p-button>
+                }
+            </div>
+        </div>
+
+        <!-- Technologies Grid -->
+        <p-dataView 
+            [value]="filteredTechnologies"
+            [loading]="loading"
+            [paginator]="true"
+            [rows]="12"
+            layout="grid">
+            
+            <ng-template pTemplate="header">
+                <div class="dataview-header">
+                    <span>{{ filteredTechnologies.length }} Technologies</span>
+                </div>
+            </ng-template>
+
+            <ng-template let-technology pTemplate="gridItem">
+                <div class="col-12 md:col-6 lg:col-4 xl:col-3">
+                    <p-card class="technology-card" [class.inactive-card]="!technology.isActive">
+                        <div class="card-header">
+                            <div class="tech-icon-container">
+                                <i [class]="'pi ' + getTechnologyIcon(technology.technologyName)"></i>
+                            </div>
+                            <p-tag 
+                                [value]="getStatusLabel(technology.isActive)" 
+                                [attr.severity]="getSeverity(technology.isActive)"
+                                styleClass="tag-small">
+                            </p-tag>
+                        </div>
+
+                        <div class="card-body">
+                            <h3 class="tech-name" (click)="viewTechnologyDetails(technology)">
+                                {{ technology.technologyName }}
+                            </h3>
+                            @if (technology.description) {
+                            <p class="tech-description">
+                                {{ technology.description }}
+                            </p>
+                            }
+                            @if (!technology.description) {
+                            <p class="tech-description no-description">
+                                No description provided
+                            </p>
+                            }
+                        </div>
+
+                        <div class="card-footer">
+                            <p-button 
+                                icon="pi pi-pencil" 
+                                (onClick)="openEditDialog(technology)"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="'warning'"
+                                size="small"
+                                [attr.pTooltip]="'Edit'">
+                            </p-button>
+                            <p-button 
+                                [icon]="technology.isActive ? 'pi pi-pause' : 'pi pi-play'" 
+                                (onClick)="toggleTechnologyStatus(technology)"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="technology.isActive ? 'warning' : 'success'"
+                                size="small"
+                                [attr.pTooltip]="technology.isActive ? 'Deactivate' : 'Activate'">
+                            </p-button>
+                            <p-button 
+                                icon="pi pi-trash" 
+                                (onClick)="deleteTechnology(technology)"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="danger"
+                                size="small"
+                                [attr.pTooltip]="'Delete'">
+                            </p-button>
+                        </div>
+                    </p-card>
+                </div>
+            </ng-template>
+
+            <ng-template pTemplate="empty">
+                <div class="empty-state">
+                    <i class="pi pi-box" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
+                    <h3>No Technologies Found</h3>
+                    <p>
+                        @if (searchQuery) {
+                        <span>Try adjusting your search criteria</span>
+                        }
+                        @if (!searchQuery) {
+                        <span>Get started by adding your first technology</span>
+                        }
+                    </p>
+                    @if (!searchQuery) {
+                    <p-button 
+                        label="Add Technology" 
+                        icon="pi pi-plus" 
+                        (onClick)="openAddDialog()">
+                    </p-button>
+                    }
+                </div>
+            </ng-template>
+        </p-dataView>
+    </p-card>
+</div>
+
+<!-- Add/Edit Technology Dialog -->
+<p-dialog 
+    [(visible)]="showAddDialog" 
+    [header]="(isEditMode ? 'Edit' : 'Add New') + ' Technology'"
+    [modal]="true"
+    [style]="{width: '500px'}"
+    [draggable]="false"
+    [resizable]="false">
+    
+    <div class="form-content">
+        <div class="field">
+            <label for="technologyName">Technology Name *</label>
+            <input 
+                id="technologyName"
+                type="text" 
+                pInputText 
+                [(ngModel)]="newTechnology.technologyName"
+                placeholder="e.g., Angular, React, Node.js"
+                class="w-full" />
+        </div>
+
+        <div class="field">
+            <label for="description">Description</label>
+            <textarea 
+                id="description"
+                pInputTextarea 
+                [(ngModel)]="newTechnology.description"
+                rows="3"
+                placeholder="Brief description of the technology..."
+                class="w-full">
+            </textarea>
+        </div>
+
+        <div class="field-checkbox">
+            <p-checkbox 
+                [(ngModel)]="newTechnology.isActive" 
+                [binary]="true"
+                inputId="isActive">
+            </p-checkbox>
+            <label for="isActive">Is Active</label>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button 
+            label="Cancel" 
+            icon="pi pi-times" 
+            (onClick)="closeDialog()"
+            [text]="true">
+        </p-button>
+        <p-button 
+            [label]="isEditMode ? 'Update' : 'Create'" 
+            icon="pi pi-check" 
+            (onClick)="saveTechnology()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+
+<!-- Technology Detail Dialog -->
+@if (selectedTechnology) {
+<p-dialog 
+    [(visible)]="showDetailDialog" 
+    header="Technology Details"
+    [modal]="true"
+    [style]="{width: '500px'}"
+    [draggable]="false"
+    [resizable]="false">
+    
+    <div class="detail-content">
+        <div class="detail-header">
+            <div class="detail-icon-container">
+                <i [class]="'pi ' + getTechnologyIcon(selectedTechnology.technologyName)"></i>
+            </div>
+            <div class="detail-info">
+                <h2>{{ selectedTechnology.technologyName }}</h2>
+                <p-tag 
+                    [value]="getStatusLabel(selectedTechnology.isActive)" 
+                    [attr.severity]="getSeverity(selectedTechnology.isActive)">
+                </p-tag>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h4>Description</h4>
+            @if (selectedTechnology.description) {
+            <p>
+                {{ selectedTechnology.description }}
+            </p>
+            }
+            @if (!selectedTechnology.description) {
+            <p class="no-description">
+                No description provided
+            </p>
+            }
+        </div>
+
+        <div class="detail-section">
+            <h4>Information</h4>
+            <div class="info-grid">
+                <div class="info-item">
+                    <i class="pi pi-calendar"></i>
+                    <div>
+                        <p class="info-label">Created</p>
+                        <p class="info-value">{{ selectedTechnology.createdDate | date:'medium' }}</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="pi pi-calendar-plus"></i>
+                    <div>
+                        <p class="info-label">Modified</p>
+                        <p class="info-value">{{ selectedTechnology.modifiedDate | date:'medium' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button 
+            label="Edit" 
+            icon="pi pi-pencil" 
+            (onClick)="openEditDialog(selectedTechnology); showDetailDialog = false"
+            [text]="true"
+            [attr.severity]="'warning'">
+        </p-button>
+        <p-button 
+            [label]="selectedTechnology.isActive ? 'Deactivate' : 'Activate'" 
+            [icon]="selectedTechnology.isActive ? 'pi pi-pause' : 'pi pi-play'" 
+            (onClick)="toggleTechnologyStatus(selectedTechnology); closeDialog()"
+            [text]="true"
+            [attr.severity]="selectedTechnology.isActive ? 'warning' : 'success'">
+        </p-button>
+        <p-button 
+            label="Delete" 
+            icon="pi pi-trash" 
+            (onClick)="deleteTechnology(selectedTechnology); closeDialog()"
+            severity="danger">
+        </p-button>
+    </ng-template>
+</p-dialog>
+}
+

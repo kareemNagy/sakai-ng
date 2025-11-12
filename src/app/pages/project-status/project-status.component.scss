@@ -1,0 +1,422 @@
+.project-status-container {
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    
+    i {
+        color: var(--primary-color);
+    }
+}
+
+.page-subtitle {
+    color: var(--text-color-secondary);
+    margin: 0;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mt-3 {
+    margin-top: 1rem;
+}
+
+.loading-state {
+    text-align: center;
+    padding: 4rem 2rem;
+
+    i {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    p {
+        color: var(--text-color-secondary);
+    }
+}
+
+// General Notes Section
+.general-notes-section {
+    .notes-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+
+        h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            i {
+                color: var(--primary-color);
+            }
+        }
+    }
+
+    .notes-content {
+        p {
+            margin: 0;
+            line-height: 1.6;
+        }
+    }
+}
+
+// Accordion
+.project-accordion {
+    ::ng-deep .p-accordionpanel {
+        margin-bottom: 1rem;
+    }
+}
+
+.accordion-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+// Statistics Grid
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.stats-card {
+    ::ng-deep .p-card-body {
+        padding: 1.5rem;
+    }
+
+    h4 {
+        margin: 0 0 1rem 0;
+        font-size: 1.125rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i {
+            color: var(--primary-color);
+        }
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+
+        span {
+            color: var(--text-color-secondary);
+        }
+
+        strong {
+            font-size: 1.125rem;
+
+            &.high-rework {
+                color: var(--red-500);
+            }
+        }
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background-color: var(--surface-200);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0.75rem 0 0.5rem 0;
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-600));
+            transition: width 0.3s ease;
+        }
+    }
+
+    small {
+        color: var(--text-color-secondary);
+        font-size: 0.875rem;
+    }
+}
+
+// Area Path Filters
+.area-path-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.filter-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: var(--surface-100);
+    }
+
+    label {
+        cursor: pointer;
+        user-select: none;
+        flex: 1;
+    }
+}
+
+// Actions Section
+.actions-section {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--surface-border);
+    flex-wrap: wrap;
+}
+
+// Team Members Grid
+.team-members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.team-member-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background-color: var(--surface-50);
+    border-radius: 8px;
+    border: 1px solid var(--surface-200);
+
+    .member-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.125rem;
+        flex-shrink: 0;
+    }
+
+    strong {
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    p {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--text-color-secondary);
+    }
+
+    small {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--text-color-secondary);
+        margin-top: 0.25rem;
+    }
+}
+
+// Comment Section
+.comment-section {
+    .comment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+
+        h4 {
+            margin: 0;
+            font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            i {
+                color: var(--primary-color);
+            }
+        }
+    }
+
+    .comment-content {
+        p {
+            margin: 0;
+            line-height: 1.6;
+        }
+    }
+}
+
+// Preview Content (Rich Text HTML)
+.preview-content {
+    padding: 0.5rem 0;
+    line-height: 1.6;
+    
+    ::ng-deep {
+        h1, h2, h3 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        h1 { font-size: 1.75rem; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.25rem; }
+        
+        p {
+            margin: 0.5rem 0;
+        }
+        
+        ul, ol {
+            margin: 0.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin: 0.25rem 0;
+        }
+        
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+            
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+        
+        code {
+            background-color: var(--surface-100);
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.875em;
+        }
+        
+        pre {
+            background-color: var(--surface-100);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+            
+            code {
+                background: none;
+                padding: 0;
+            }
+        }
+        
+        strong {
+            font-weight: 600;
+        }
+        
+        em {
+            font-style: italic;
+        }
+    }
+}
+
+// PrimeNG Editor Styling
+::ng-deep .p-editor-container {
+    border-radius: 8px;
+    
+    .p-editor-toolbar {
+        background: var(--surface-50);
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    
+    .p-editor-content {
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        
+        .ql-editor {
+            min-height: 150px;
+            font-size: 1rem;
+        }
+    }
+}
+
+// Chart Container
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+// Responsive
+@media (max-width: 768px) {
+    .project-status-container {
+        padding: 1rem;
+    }
+
+    .header-section {
+        flex-direction: column;
+        align-items: stretch;
+
+        ::ng-deep button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .area-path-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .team-members-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .actions-section {
+        flex-direction: column;
+
+        ::ng-deep button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    .chart-container {
+        height: 300px;
+    }
+}
+

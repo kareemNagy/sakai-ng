@@ -1,0 +1,568 @@
+.task-import-container {
+    padding: 1.5rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+
+    h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        i {
+            color: var(--primary-color);
+        }
+    }
+
+    p {
+        color: var(--text-color-secondary);
+        margin: 0;
+    }
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem;
+}
+
+.controls-section,
+.filter-group {
+    label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+
+        i {
+            color: var(--primary-color);
+        }
+    }
+
+    .required {
+        color: var(--red-500);
+    }
+
+    .control-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .results-count {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--green-600);
+        font-weight: 600;
+
+        i {
+            color: var(--green-600);
+        }
+    }
+}
+
+// Main Content Grid
+.main-content {
+    margin-top: 2rem;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 1.5rem;
+}
+
+// Section Headers
+.section-header {
+    margin-bottom: 1.5rem;
+
+    h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        i {
+            color: var(--primary-color);
+        }
+    }
+
+    p {
+        color: var(--text-color-secondary);
+        margin: 0;
+    }
+}
+
+// User Stories Section
+.user-stories-section {
+    min-height: 400px;
+}
+
+.user-stories-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.user-story-card {
+    ::ng-deep .p-card-body {
+        padding: 0;
+    }
+
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.story-header {
+    padding: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    border-bottom: 1px solid var(--surface-border);
+}
+
+.story-title-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.expand-icon {
+    font-size: 1rem;
+    color: var(--text-color-secondary);
+    margin-top: 0.25rem;
+    transition: transform 0.2s;
+}
+
+.story-title-content {
+    flex: 1;
+
+    .story-id {
+        font-size: 0.875rem;
+        color: var(--primary-color);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+}
+
+.story-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.story-content {
+    padding: 1.25rem;
+}
+
+.story-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--surface-border);
+
+    span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-color-secondary);
+        font-size: 0.875rem;
+
+        i {
+            color: var(--primary-color);
+        }
+    }
+}
+
+// Drop Zone
+.drop-zone {
+    min-height: 200px;
+    border: 2px dashed var(--surface-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    background: var(--surface-50);
+    transition: all 0.2s;
+
+    &.empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &.has-tasks {
+        border-style: solid;
+        background: var(--surface-0);
+    }
+}
+
+.drop-zone-empty {
+    text-align: center;
+    color: var(--text-color-secondary);
+
+    i {
+        font-size: 3rem;
+        color: var(--text-color-secondary);
+        margin-bottom: 1rem;
+    }
+
+    p {
+        margin: 0;
+        font-size: 1.125rem;
+    }
+}
+
+// Dragged Tasks Grid
+.dragged-tasks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.task-card {
+    ::ng-deep .p-card-body {
+        padding: 0;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid var(--surface-border);
+
+        i {
+            color: var(--primary-color);
+        }
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .card-footer {
+        padding: 1rem;
+        border-top: 1px solid var(--surface-border);
+    }
+
+    .form-field {
+        margin-bottom: 1rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+
+            .required {
+                color: var(--red-500);
+            }
+        }
+
+        ::ng-deep {
+            .p-inputtext,
+            .p-select,
+            .p-inputnumber,
+            .p-autocomplete {
+                width: 100%;
+            }
+
+            .p-inputnumber {
+                width: 100%;
+
+                input {
+                    width: 100%;
+                }
+            }
+        }
+    }
+
+    .assigned-badge {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background: var(--green-50);
+        border-radius: 6px;
+        color: var(--green-700);
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i {
+            color: var(--green-600);
+        }
+    }
+
+    .validation-errors {
+        margin-top: 0.75rem;
+
+        ::ng-deep .p-tag {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+}
+
+.member-item {
+    .member-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .member-email {
+        font-size: 0.875rem;
+        color: var(--text-color-secondary);
+    }
+}
+
+// Story Actions
+.story-actions {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--surface-border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .validation-warning {
+        color: var(--orange-600);
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i {
+            color: var(--orange-600);
+        }
+    }
+}
+
+// Task Templates Section
+.task-templates-section {
+    position: sticky;
+    top: 1rem;
+}
+
+.task-templates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    padding-right: 0.5rem;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: var(--surface-100);
+        border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--surface-400);
+        border-radius: 3px;
+
+        &:hover {
+            background: var(--surface-500);
+        }
+    }
+}
+
+.task-template-card {
+    cursor: move;
+    transition: all 0.2s;
+
+    &:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    ::ng-deep .p-card-body {
+        padding: 1rem;
+    }
+
+    .template-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+
+        .drag-handle {
+            color: var(--text-color-secondary);
+            font-size: 1.25rem;
+            cursor: move;
+        }
+
+        h4 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            flex: 1;
+        }
+    }
+
+    .template-description {
+        margin: 0 0 0.75rem 0;
+        color: var(--text-color-secondary);
+        font-size: 0.875rem;
+        line-height: 1.4;
+    }
+
+    .template-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+// Empty States
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-color-secondary);
+
+    i {
+        color: var(--text-color-secondary);
+        margin-bottom: 1rem;
+    }
+
+    p {
+        margin: 0.5rem 0;
+        font-size: 1.125rem;
+    }
+
+    small {
+        font-size: 0.875rem;
+    }
+}
+
+.empty-state-main {
+    text-align: center;
+    padding: 4rem 2rem;
+
+    i {
+        color: var(--text-color-secondary);
+        margin-bottom: 1.5rem;
+    }
+
+    h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    p {
+        margin: 0;
+        color: var(--text-color-secondary);
+    }
+}
+
+// Loading Overlay
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    color: white;
+
+    i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: white;
+    }
+
+    p {
+        margin: 0;
+        font-size: 1.125rem;
+    }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .task-templates-section {
+        position: static;
+    }
+
+    .task-templates-list {
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 768px) {
+    .task-import-container {
+        padding: 1rem;
+    }
+
+    .dragged-tasks-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .control-row {
+        flex-direction: column;
+        align-items: stretch !important;
+
+        ::ng-deep {
+            .p-select,
+            .p-button {
+                width: 100%;
+            }
+        }
+    }
+
+    .story-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .story-badges {
+        width: 100%;
+    }
+}
+
+// Utility Classes
+.w-full {
+    width: 100%;
+}
+

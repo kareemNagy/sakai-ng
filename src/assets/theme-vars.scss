@@ -1,0 +1,49 @@
+:root {
+    --primary-color: #2563eb;
+    --primary-600: #1d4ed8;
+    --primary-color-text: #ffffff;
+
+    --text-color: #0f172a;
+    --text-color-secondary: #64748b;
+
+    --surface-0: #ffffff;
+    --surface-50: #f8fafc;
+    --surface-100: #f1f5f9;
+    --surface-200: #e2e8f0;
+    --surface-400: #94a3b8;
+    --surface-500: #64748b;
+    --surface-border: #e2e8f0;
+    --surface-card: #ffffff;
+
+    --border-radius: 12px;
+
+    --red-500: #ef4444;
+    --red-600: #dc2626;
+    --orange-500: #f97316;
+    --orange-600: #ea580c;
+    --purple-500: #a855f7;
+    --blue-500: #3b82f6;
+    --green-50: #f0fdf4;
+    --green-500: #22c55e;
+    --green-600: #16a34a;
+    --green-700: #15803d;
+
+    --surface-overlay: rgba(15, 23, 42, 0.65);
+}
+
+.app-dark {
+    --text-color: #e2e8f0;
+    --text-color-secondary: #94a3b8;
+
+    --surface-0: #0f172a;
+    --surface-50: #111c2f;
+    --surface-100: #1e293b;
+    --surface-200: #27364d;
+    --surface-400: #3f4c67;
+    --surface-500: #64748b;
+    --surface-border: #334155;
+    --surface-card: #172031;
+
+    --surface-overlay: rgba(15, 23, 42, 0.75);
+}
+

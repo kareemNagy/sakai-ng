@@ -1,0 +1,421 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="team-management">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Team Members</h1>
+            <p class="page-subtitle">Manage your team and track workload</p>
+        </div>
+        <p-button 
+            label="Add Member" 
+            icon="pi pi-plus" 
+            (onClick)="openAddDialog()"
+            styleClass="p-button-raised">
+        </p-button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid stats-grid">
+        <div class="col-12 md:col-6 lg:col-3">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon total">
+                        <i class="pi pi-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Members</p>
+                        <p class="stat-value">{{ teamMembers.length }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-6 lg:col-3">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon active">
+                        <i class="pi pi-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Active</p>
+                        <p class="stat-value">{{ getActiveCount() }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-6 lg:col-3">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon inactive">
+                        <i class="pi pi-pause-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Inactive</p>
+                        <p class="stat-value">{{ getInactiveCount() }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-6 lg:col-3">
+            <p-card>
+                <div class="stat-content">
+                    <div class="stat-icon filtered">
+                        <i class="pi pi-filter"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Filtered</p>
+                        <p class="stat-value">{{ filteredMembers.length }}</p>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <p-card>
+        <!-- Search and Filters -->
+        <div class="filters-section">
+            <span class="p-input-icon-left search-input">
+                <i class="pi pi-search"></i>
+                <input 
+                    pInputText 
+                    type="text" 
+                    [(ngModel)]="searchQuery"
+                    (ngModelChange)="onSearchChange()"
+                    placeholder="Search by name, email, or role..." />
+            </span>
+
+            <div class="filter-controls">
+                <p-select 
+                    [options]="roles"
+                    [(ngModel)]="filterRole"
+                    (ngModelChange)="onFilterChange()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [style]="{'width':'200px'}">
+                </p-select>
+
+                <p-select 
+                    [options]="statusOptions"
+                    [(ngModel)]="filterStatus"
+                    (ngModelChange)="onFilterChange()"
+                    optionLabel="label"
+                    optionValue="value"
+                    [style]="{'width':'150px'}">
+                </p-select>
+            </div>
+        </div>
+
+        <!-- Team Members Table -->
+        <p-table 
+            [value]="filteredMembers" 
+            [loading]="loading"
+            [paginator]="true"
+            [rows]="10"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} members"
+            [rowsPerPageOptions]="[10, 25, 50]"
+            styleClass="p-datatable-striped">
+            
+            <ng-template pTemplate="header">
+                <tr>
+                    <th pSortableColumn="fullName">
+                        Name 
+                        <p-sortIcon field="fullName"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="email">
+                        Email 
+                        <p-sortIcon field="email"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="title">
+                        Role 
+                        <p-sortIcon field="title"></p-sortIcon>
+                    </th>
+                    <th>Status</th>
+                    <th>Joined Date</th>
+                    <th>Actions</th>
+                </tr>
+            </ng-template>
+            
+            <ng-template pTemplate="body" let-member>
+                <tr>
+                    <td>
+                        <div class="member-name-cell">
+                            <p-avatar 
+                                [label]="getInitials(member.fullName || '')" 
+                                styleClass="avatar-custom"
+                                [style]="{'background-color':'var(--primary-color)', 'color': 'white'}">
+                            </p-avatar>
+                            <span class="member-name">{{ member.fullName }}</span>
+                        </div>
+                    </td>
+                    <td>{{ member.email }}</td>
+                    <td>{{ member.title }}</td>
+                    <td>
+                        <p-tag 
+                            [value]="getStatusLabel(member.isActive)" 
+                            [attr.severity]="getSeverity(member.isActive)">
+                        </p-tag>
+                    </td>
+                    <td>{{ member.createdDate | date:'MMM d, yyyy' }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <p-button 
+                                icon="pi pi-eye" 
+                                (onClick)="viewMemberDetails(member)"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="info"
+                                [attr.pTooltip]="'View Details'">
+                            </p-button>
+                            <p-button 
+                                icon="pi pi-pencil" 
+                                (onClick)="openEditDialog(member)"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="'warning'"
+                                [attr.pTooltip]="'Edit'">
+                            </p-button>
+                            <p-button 
+                                [icon]="member.isActive ? 'pi pi-pause' : 'pi pi-play'" 
+                                (onClick)="toggleMemberStatus(member)"
+                                [text]="true"
+                                [rounded]="true"
+                                [attr.severity]="member.isActive ? 'warning' : 'success'"
+                                [attr.pTooltip]="member.isActive ? 'Deactivate' : 'Activate'">
+                            </p-button>
+                            <p-button 
+                                icon="pi pi-trash" 
+                                (onClick)="deleteMember(member)"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="danger"
+                                [attr.pTooltip]="'Delete'">
+                            </p-button>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+            
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="pi pi-users" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
+                            <h3>No team members found</h3>
+                            <p>{{ searchQuery ? 'Try adjusting your search filters' : 'Get started by adding your first team member' }}</p>
+                            @if (!searchQuery) {
+                            <p-button 
+                                label="Add Team Member" 
+                                icon="pi pi-plus" 
+                                (onClick)="openAddDialog()">
+                            </p-button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-card>
+</div>
+
+<!-- Add/Edit Member Dialog -->
+<p-dialog 
+    [(visible)]="showAddDialog" 
+    [header]="(isEditMode ? 'Edit' : 'Add') + ' Team Member'"
+    [modal]="true"
+    [style]="{width: '500px'}"
+    [draggable]="false"
+    [resizable]="false">
+    
+    <div class="form-content">
+        <div class="field">
+            <label for="fullName">Full Name *</label>
+            <input 
+                id="fullName"
+                type="text" 
+                pInputText 
+                [(ngModel)]="newMember.fullName"
+                placeholder="John Doe"
+                class="w-full" />
+        </div>
+
+        <div class="field">
+            <label for="email">Email *</label>
+            <input 
+                id="email"
+                type="email" 
+                pInputText 
+                [(ngModel)]="newMember.email"
+                placeholder="john.doe@company.com"
+                class="w-full" />
+        </div>
+
+        <div class="field">
+            <label for="title">Job Title *</label>
+            <input 
+                id="title"
+                type="text" 
+                pInputText 
+                [(ngModel)]="newMember.title"
+                placeholder="Senior Developer"
+                class="w-full" />
+        </div>
+
+        <div class="field-checkbox">
+            <p-checkbox 
+                [(ngModel)]="newMember.isActive" 
+                [binary]="true"
+                inputId="isActive">
+            </p-checkbox>
+            <label for="isActive">Active Member</label>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button 
+            label="Cancel" 
+            icon="pi pi-times" 
+            (onClick)="closeDialog()"
+            [text]="true">
+        </p-button>
+        <p-button 
+            [label]="isEditMode ? 'Update' : 'Add'" 
+            icon="pi pi-check" 
+            (onClick)="saveMember()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+
+<!-- Member Detail Dialog -->
+@if (selectedMember) {
+<p-dialog 
+    [(visible)]="showDetailDialog" 
+    header="Team Member Details"
+    [modal]="true"
+    [style]="{width: '600px'}"
+    [draggable]="false"
+    [resizable]="false">
+    
+    <div class="detail-content">
+        <!-- Member Profile -->
+        <div class="detail-profile">
+            <p-avatar 
+                [label]="getInitials(selectedMember.fullName || '')" 
+                size="xlarge"
+                [style]="{'background-color':'var(--primary-color)', 'color': 'white', 'font-size': '2rem'}">
+            </p-avatar>
+            <div class="profile-info">
+                <h3>{{ selectedMember.fullName }}</h3>
+                <p class="profile-title">{{ selectedMember.title }}</p>
+                <p-tag 
+                    [value]="getStatusLabel(selectedMember.isActive)" 
+                    [attr.severity]="getSeverity(selectedMember.isActive)">
+                </p-tag>
+            </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="detail-section">
+            <h4>Contact Information</h4>
+            <div class="info-grid">
+                <div class="info-item">
+                    <i class="pi pi-envelope"></i>
+                    <div>
+                        <p class="info-label">Email</p>
+                        <p class="info-value">{{ selectedMember.email }}</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="pi pi-calendar"></i>
+                    <div>
+                        <p class="info-label">Joined Date</p>
+                        <p class="info-value">{{ selectedMember.createdDate | date:'MMM d, yyyy' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workload Summary -->
+        @if (memberWorkload.length > 0) {
+        <div class="detail-section">
+            <h4>Workload Summary</h4>
+            
+            <div class="workload-stats grid">
+                <div class="col-6">
+                    <p-card>
+                        <div class="workload-stat">
+                            <i class="pi pi-list"></i>
+                            <div>
+                                <p class="stat-label">Total Tasks</p>
+                                <p class="stat-value">{{ getTotalTasks(memberWorkload) }}</p>
+                            </div>
+                        </div>
+                    </p-card>
+                </div>
+                <div class="col-6">
+                    <p-card>
+                        <div class="workload-stat">
+                            <i class="pi pi-check-circle"></i>
+                            <div>
+                                <p class="stat-label">Completion Rate</p>
+                                <p class="stat-value">{{ getCompletionRate(memberWorkload) }}%</p>
+                            </div>
+                        </div>
+                    </p-card>
+                </div>
+            </div>
+
+            <div class="workload-projects">
+                @for (work of memberWorkload; track work.projectName) {
+                <p-card class="project-card">
+                    <div class="project-header">
+                        <h5>{{ work.projectName }}</h5>
+                        <p-tag [value]="work.title" severity="info"></p-tag>
+                    </div>
+                    <div class="project-tasks grid">
+                        <div class="col-4 text-center">
+                            <p class="task-label">Open</p>
+                            <p class="task-count">{{ work.openTasks }}</p>
+                        </div>
+                        <div class="col-4 text-center">
+                            <p class="task-label">Closed</p>
+                            <p class="task-count success">{{ work.closedTasks }}</p>
+                        </div>
+                        <div class="col-4 text-center">
+                            <p class="task-label">Overdue</p>
+                            <p class="task-count danger">{{ work.overdueTasks }}</p>
+                        </div>
+                    </div>
+                </p-card>
+                }
+            </div>
+        </div>
+        }
+
+        @if (memberWorkload.length === 0) {
+        <div class="detail-section">
+            <p class="text-center" style="color: var(--text-color-secondary); padding: 2rem;">
+                No workload data available
+            </p>
+        </div>
+        }
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button 
+            label="Edit Member" 
+            icon="pi pi-pencil" 
+            (onClick)="openEditDialog(selectedMember!); showDetailDialog = false"
+            [text]="true">
+        </p-button>
+        <p-button 
+            label="Close" 
+            icon="pi pi-times" 
+            (onClick)="closeDialog()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+}
+
