@@ -14,6 +14,8 @@ import { ProjectService } from '../../core/services/project.service';
 import { Project } from '../../core/models';
 import { environment } from '../../../environments/environment';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { EmailModalComponent, EmailData, UserWithEmail, UserStats } from '../../shared/components/email-modal/email-modal.component';
+import { Observable, forkJoin } from 'rxjs';
 
 interface WorkItem {
   id: number;
@@ -42,7 +44,8 @@ interface WorkItem {
         InputTextModule,
         ToastModule,
         TableModule,
-        CheckboxModule
+        CheckboxModule,
+        EmailModalComponent
     ],
     providers: [MessageService],
     templateUrl: './project-kpi.component.html',
@@ -90,6 +93,11 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
     kpiFilters = {
         areaPath: [] as string[]
     };
+
+    // Email modal state
+    emailModalVisible = false;
+    emailModalData: EmailData | null = null;
+    emailModalUsers: UserWithEmail[] = [];
 
     // Pagination
     currentPage: number = 1;
@@ -152,6 +160,7 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
             deviation: 0
         };
         this.resetFilters();
+        this.closeEmailModal();
     }
     
     resetFilters(): void {
@@ -368,6 +377,15 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                onClick: (event, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const userName = labels[index];
+                        if (userName) {
+                            this.openEmailModal(userName, 'estimate-actual');
+                        }
+                    }
+                },
                 plugins: {
                     title: {
                         display: true,
@@ -456,6 +474,15 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                onClick: (event, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const userName = labels[index];
+                        if (userName) {
+                            this.openEmailModal(userName, 'coding-bugfixing');
+                        }
+                    }
+                },
                 plugins: {
                     title: {
                         display: true,
@@ -540,6 +567,15 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                onClick: (event, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const userName = labels[index];
+                        if (userName) {
+                            this.openEmailModal(userName, 'rework');
+                        }
+                    }
+                },
                 plugins: {
                     title: {
                         display: true,
@@ -721,6 +757,209 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
             return (value / 1000).toFixed(2) + 'K';
         }
         return value.toFixed(2);
+    }
+
+    openEmailModal(userName: string, chartType: 'estimate-actual' | 'coding-bugfixing' | 'rework'): void {
+        const users = this.getAvailableUsers();
+        if (!users.length) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'No Recipients',
+                detail: 'No team members with email addresses were found.'
+            });
+            return;
+        }
+
+        this.emailModalUsers = users;
+        this.emailModalData = {
+            recipientNames: userName ? [userName] : [],
+            subject: this.getEmailSubject(chartType, !!userName),
+            projectName: this.selectedProjectName,
+            data: this.getEmailDataMarkers(chartType)
+        };
+        this.emailModalVisible = true;
+    }
+
+    openEmailModalWithoutUser(chartType: 'estimate-actual' | 'coding-bugfixing' | 'rework'): void {
+        this.openEmailModal('', chartType);
+    }
+
+    closeEmailModal(): void {
+        this.emailModalVisible = false;
+        this.emailModalData = null;
+        this.emailModalUsers = [];
+    }
+
+    handleEmailSend(emailData: EmailData): void {
+        if (!emailData.recipientNames.length) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'No Recipients',
+                detail: 'Please select at least one recipient.'
+            });
+            return;
+        }
+
+        const requests = emailData.recipientNames
+            .map((recipient) => {
+                const stats = this.getUserStats(recipient);
+                const email = this.getUserEmail(recipient);
+
+                if (!stats || !email) {
+                    this.messageService.add({
+                        severity: 'warn',
+                        summary: 'Missing Data',
+                        detail: `Skipping ${recipient}: missing stats or email address.`
+                    });
+                    return null;
+                }
+
+                const payload = {
+                    to: [email],
+                    cc: emailData.ccEmails ?? [],
+                    subject: emailData.subject,
+                    projectName: emailData.projectName ?? this.selectedProjectName,
+                    recipientName: recipient,
+                    templateId: emailData.templateId,
+                    additionalMessage: emailData.additionalMessage,
+                    data: this.buildEmailPayloadData(stats, emailData.data)
+                };
+
+                return this.http.post(`${environment.apiUrl}/reports/send-effort-email`, payload);
+            })
+            .filter((request): request is Observable<any> => request !== null);
+
+        if (!requests.length) {
+            return;
+        }
+
+        forkJoin(requests).subscribe({
+            next: () => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Emails Sent',
+                    detail: `${requests.length} email(s) sent successfully.`
+                });
+                this.closeEmailModal();
+            },
+            error: (error) => {
+                console.error('Error sending emails', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to send emails. Please try again.'
+                });
+            }
+        });
+    }
+
+    private getEmailSubject(chartType: 'estimate-actual' | 'coding-bugfixing' | 'rework', personalized: boolean): string {
+        switch (chartType) {
+            case 'estimate-actual':
+                return personalized ? 'Your Effort Report: Estimate vs Actual Hours' : 'Effort Report: Estimate vs Actual Hours';
+            case 'coding-bugfixing':
+                return personalized ? 'Your Effort Report: Coding vs Bug Fixing' : 'Effort Report: Coding vs Bug Fixing';
+            case 'rework':
+            default:
+                return personalized ? 'Your Rework Report' : 'Rework Report';
+        }
+    }
+
+    private getEmailDataMarkers(chartType: 'estimate-actual' | 'coding-bugfixing' | 'rework'): EmailData['data'] {
+        switch (chartType) {
+            case 'estimate-actual':
+                return { estimateHours: 0, actualHours: 0 };
+            case 'coding-bugfixing':
+                return { codingHours: 0, bugFixingHours: 0 };
+            case 'rework':
+            default:
+                return { codingHours: 0, bugFixingHours: 0, reworkPercentage: 0 };
+        }
+    }
+
+    private getAvailableUsers(): UserWithEmail[] {
+        const filteredItems = this.kpiFilters.areaPath.length > 0
+            ? this.workItemsDetails.filter((item) => this.kpiFilters.areaPath.includes(item.areaPath))
+            : this.workItemsDetails;
+
+        const map = new Map<string, string>();
+        filteredItems.forEach((item) => {
+            if (item.assignedTo && item.assignedTo !== 'Unassigned' && item.assignedToEmail) {
+                map.set(item.assignedTo, item.assignedToEmail);
+            }
+        });
+
+        return Array.from(map.entries()).map(([name, email]) => ({ name, email })).sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    private getUserEmail(userName: string): string | null {
+        const user = this.emailModalUsers.find((u) => u.name === userName);
+        return user?.email ?? null;
+    }
+
+    getUserStats(userName: string): UserStats | null {
+        const sourceItems = this.kpiFilters.areaPath.length > 0
+            ? this.workItemsDetails.filter((item) => this.kpiFilters.areaPath.includes(item.areaPath))
+            : this.workItemsDetails;
+
+        const items = sourceItems.filter((item) => item.assignedTo === userName);
+        if (!items.length) {
+            return null;
+        }
+
+        let estimate = 0;
+        let actual = 0;
+        let coding = 0;
+        let bugFixing = 0;
+
+        items.forEach((item) => {
+            const activity = (item.activity || '').toLowerCase();
+            const subActivity = (item.subActivity || '').toLowerCase();
+            const completedWork = item.completedWork || 0;
+
+            estimate += item.originalEstimate || 0;
+            actual += completedWork;
+
+            if (subActivity.includes('bug') || subActivity.includes('fix') || activity.includes('bug')) {
+                bugFixing += completedWork;
+            }
+
+            if (subActivity.includes('coding') || subActivity.includes('development') || activity.includes('coding') || activity.includes('development')) {
+                coding += completedWork;
+            }
+        });
+
+        const rework = coding > 0 ? (bugFixing / coding) * 100 : 0;
+
+        return {
+            estimate,
+            actual,
+            coding,
+            bugFixing,
+            rework
+        };
+    }
+
+    private buildEmailPayloadData(stats: UserStats, markers: EmailData['data']): Record<string, number> {
+        const payload: Record<string, number> = {};
+
+        if (Object.prototype.hasOwnProperty.call(markers, 'estimateHours')) {
+            payload['estimateHours'] = stats.estimate;
+        }
+        if (Object.prototype.hasOwnProperty.call(markers, 'actualHours')) {
+            payload['actualHours'] = stats.actual;
+        }
+        if (Object.prototype.hasOwnProperty.call(markers, 'codingHours')) {
+            payload['codingHours'] = stats.coding;
+        }
+        if (Object.prototype.hasOwnProperty.call(markers, 'bugFixingHours')) {
+            payload['bugFixingHours'] = stats.bugFixing;
+        }
+        if (Object.prototype.hasOwnProperty.call(markers, 'reworkPercentage')) {
+            payload['reworkPercentage'] = stats.rework;
+        }
+
+        return payload;
     }
 
     exportToCSV(): void {

@@ -159,18 +159,63 @@
     @if (workItemsDetails.length > 0) {
     <div class="charts-grid">
         <p-card styleClass="chart-card">
+            <div class="chart-card-header">
+                <div class="chart-card-title">
+                    <i class="pi pi-chart-bar"></i>
+                    <span>Total - Estimate vs Actual / User</span>
+                </div>
+                <p-button
+                    type="button"
+                    icon="pi pi-envelope"
+                    label="Email Report"
+                    size="small"
+                    [text]="true"
+                    (onClick)="openEmailModalWithoutUser('estimate-actual')"
+                    [disabled]="filteredWorkItems.length === 0"
+                ></p-button>
+            </div>
             <div class="chart-container">
                 <canvas #estimateActualChart></canvas>
             </div>
         </p-card>
 
         <p-card styleClass="chart-card">
+            <div class="chart-card-header">
+                <div class="chart-card-title">
+                    <i class="pi pi-code"></i>
+                    <span>Coding vs Bug Fixing / User</span>
+                </div>
+                <p-button
+                    type="button"
+                    icon="pi pi-envelope"
+                    label="Email Report"
+                    size="small"
+                    [text]="true"
+                    (onClick)="openEmailModalWithoutUser('coding-bugfixing')"
+                    [disabled]="filteredWorkItems.length === 0"
+                ></p-button>
+            </div>
             <div class="chart-container">
                 <canvas #codingBugFixingChart></canvas>
             </div>
         </p-card>
 
         <p-card styleClass="chart-card">
+            <div class="chart-card-header">
+                <div class="chart-card-title">
+                    <i class="pi pi-refresh"></i>
+                    <span>Rework % / User</span>
+                </div>
+                <p-button
+                    type="button"
+                    icon="pi pi-envelope"
+                    label="Email Report"
+                    size="small"
+                    [text]="true"
+                    (onClick)="openEmailModalWithoutUser('rework')"
+                    [disabled]="filteredWorkItems.length === 0"
+                ></p-button>
+            </div>
             <div class="chart-container">
                 <canvas #reworkChart></canvas>
             </div>
@@ -196,17 +241,42 @@
             [rows]="10"
             [rowsPerPageOptions]="[10, 25, 50]"
             styleClass="p-datatable-sm"
-            responsiveLayout="scroll">
+            responsiveLayout="scroll"
+            [sortMode]="'multiple'">
             <ng-template pTemplate="header">
                 <tr>
-                    <th style="width: 80px;">ID</th>
-                    <th>Title</th>
-                    <th style="width: 120px;">State</th>
-                    <th style="width: 150px;">Assigned To</th>
-                    <th style="width: 150px;">Activity</th>
-                    <th style="width: 150px;">Sub Activity</th>
-                    <th style="width: 100px;">Estimate</th>
-                    <th style="width: 100px;">Actual</th>
+                    <th pSortableColumn="id" style="width: 80px;">
+                        ID
+                        <p-sortIcon field="id"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="title">
+                        Title
+                        <p-sortIcon field="title"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="state" style="width: 120px;">
+                        State
+                        <p-sortIcon field="state"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="assignedTo" style="width: 150px;">
+                        Assigned To
+                        <p-sortIcon field="assignedTo"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="activity" style="width: 150px;">
+                        Activity
+                        <p-sortIcon field="activity"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="subActivity" style="width: 150px;">
+                        Sub Activity
+                        <p-sortIcon field="subActivity"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="originalEstimate" style="width: 100px;">
+                        Estimate
+                        <p-sortIcon field="originalEstimate"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="completedWork" style="width: 100px;">
+                        Actual
+                        <p-sortIcon field="completedWork"></p-sortIcon>
+                    </th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-item>
@@ -244,5 +314,14 @@
         </div>
     </p-card>
     }
+
+    <app-email-modal
+        [visible]="emailModalVisible"
+        [emailData]="emailModalData"
+        [availableUsers]="emailModalUsers"
+        [getUserStatsCallback]="getUserStats.bind(this)"
+        (close)="closeEmailModal()"
+        (send)="handleEmailSend($event)"
+    ></app-email-modal>
 </div>
 

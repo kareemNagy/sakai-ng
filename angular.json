@@ -34,16 +34,67 @@
                         "styles": [
                             "src/assets/styles.scss"
                         ],
-                        "scripts": []
+                        "scripts": [],
+                        "budgets": [
+                            {
+                                "type": "initial",
+                                "maximumWarning": "2mb",
+                                "maximumError": "5mb"
+                            },
+                            {
+                                "type": "anyComponentStyle",
+                                "maximumWarning": "100kb",
+                                "maximumError": "200kb"
+                            },
+                            {
+                                "type": "bundle",
+                                "maximumWarning": "2mb",
+                                "maximumError": "5mb"
+                            }
+                        ]
                     },
                     "configurations": {
                         "production": {
-                            "outputHashing": "all"
+                            "outputHashing": "all",
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "2mb",
+                                    "maximumError": "5mb"
+                                },
+                                {
+                                    "type": "anyComponentStyle",
+                                    "maximumWarning": "100kb",
+                                    "maximumError": "200kb"
+                                },
+                                {
+                                    "type": "bundle",
+                                    "maximumWarning": "2mb",
+                                    "maximumError": "5mb"
+                                }
+                            ]
                         },
                         "development": {
                             "optimization": false,
                             "extractLicenses": false,
-                            "sourceMap": true
+                            "sourceMap": true,
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "2mb",
+                                    "maximumError": "5mb"
+                                },
+                                {
+                                    "type": "anyComponentStyle",
+                                    "maximumWarning": "100kb",
+                                    "maximumError": "200kb"
+                                },
+                                {
+                                    "type": "bundle",
+                                    "maximumWarning": "2mb",
+                                    "maximumError": "5mb"
+                                }
+                            ]
                         }
                     },
                     "defaultConfiguration": "production"

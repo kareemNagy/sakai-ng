@@ -116,7 +116,8 @@
             [showCurrentPageReport]="true"
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} members"
             [rowsPerPageOptions]="[10, 25, 50]"
-            styleClass="p-datatable-striped">
+            styleClass="p-datatable-striped"
+            [sortMode]="'multiple'">
             
             <ng-template pTemplate="header">
                 <tr>
@@ -132,8 +133,14 @@
                         Role 
                         <p-sortIcon field="title"></p-sortIcon>
                     </th>
-                    <th>Status</th>
-                    <th>Joined Date</th>
+                    <th pSortableColumn="isActive">
+                        Status
+                        <p-sortIcon field="isActive"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="createdDate">
+                        Joined Date
+                        <p-sortIcon field="createdDate"></p-sortIcon>
+                    </th>
                     <th>Actions</th>
                 </tr>
             </ng-template>

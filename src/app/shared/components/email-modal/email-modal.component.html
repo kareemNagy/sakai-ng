@@ -1,0 +1,161 @@
+<p-dialog
+    [(visible)]="visible"
+    header="Send Effort Report"
+    [modal]="true"
+    [style]="{ width: '650px', maxWidth: '95vw' }"
+    [dismissableMask]="true"
+    (onHide)="onHide()"
+>
+    <ng-template pTemplate="content">
+        <div class="email-modal-body" *ngIf="emailData">
+            <div class="form-section">
+                <label class="field-label">Recipients *</label>
+                <p-multiSelect
+                    class="w-full"
+                    [options]="availableUsers"
+                    optionLabel="name"
+                    optionValue="name"
+                    [(ngModel)]="selectedUsers"
+                    [display]="'chip'"
+                    placeholder="Select team members..."
+                    [panelStyle]="{ maxHeight: '260px' }"
+                ></p-multiSelect>
+                <small class="help-text">
+                    {{ selectedCount }} recipient(s) selected
+                </small>
+            </div>
+
+            <div class="grid-two-cols">
+                <div class="form-section">
+                    <label class="field-label">Email Template</label>
+                    <p-select
+                        class="w-full"
+                        [options]="templates"
+                        optionLabel="templateName"
+                        optionValue="emailTemplateId"
+                        [(ngModel)]="selectedTemplateId"
+                        [loading]="loadingTemplates"
+                        placeholder="Use default template"
+                    ></p-select>
+                </div>
+
+                <div class="form-section">
+                    <label class="field-label">CC (optional)</label>
+                    <input
+                        type="text"
+                        pInputText
+                        class="w-full"
+                        [(ngModel)]="ccValue"
+                        placeholder="cc1@example.com, cc2@example.com"
+                        [ngClass]="{ 'invalid-field': ccValue && !validateEmails(ccValue) }"
+                    />
+                    <small class="help-text">Separate multiple emails with commas.</small>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label class="field-label">Subject *</label>
+                <input
+                    type="text"
+                    pInputText
+                    class="w-full"
+                    [(ngModel)]="emailSubject"
+                    placeholder="Email subject"
+                />
+            </div>
+
+            <div class="form-section">
+                <label class="field-label">Additional Message</label>
+                <textarea
+                    pTextarea
+                    class="w-full"
+                    rows="4"
+                    [(ngModel)]="additionalMessage"
+                    placeholder="Add a custom note (optional)"
+                ></textarea>
+            </div>
+
+            @if (selectedCount > 0) {
+            <div class="stats-section">
+                <h4 class="stats-title">Effort Summary (Per Recipient)</h4>
+                <div class="stats-grid">
+                    @for (entry of userStatsList; track entry.user) {
+                    <p-card styleClass="stats-card">
+                        <div class="stats-card__header">
+                            <i class="pi pi-user"></i>
+                            <span>{{ entry.user }}</span>
+                        </div>
+                        @if (entry.stats; as stats) {
+                        <div class="stats-card__body">
+                            @if (emailData.data.estimateHours) {
+                            <div class="stats-item">
+                                <span class="label">Estimated Hours</span>
+                                <span class="value">{{ stats.estimate.toFixed(2) }}h</span>
+                            </div>
+                            }
+                            @if (emailData.data.actualHours) {
+                            <div class="stats-item">
+                                <span class="label">Actual Hours</span>
+                                <span class="value">{{ stats.actual.toFixed(2) }}h</span>
+                            </div>
+                            }
+                            @if (emailData.data.codingHours) {
+                            <div class="stats-item">
+                                <span class="label">Coding Hours</span>
+                                <span class="value">{{ stats.coding.toFixed(2) }}h</span>
+                            </div>
+                            }
+                            @if (emailData.data.bugFixingHours) {
+                            <div class="stats-item">
+                                <span class="label">Bug Fixing Hours</span>
+                                <span class="value">{{ stats.bugFixing.toFixed(2) }}h</span>
+                            </div>
+                            }
+                            @if (emailData.data.reworkPercentage) {
+                            <div class="stats-item">
+                                <span class="label">Rework %</span>
+                                <span class="value highlight">{{ stats.rework.toFixed(2) }}%</span>
+                            </div>
+                            }
+                        </div>
+                        } @else {
+                        <div class="stats-card__empty">
+                            <i class="pi pi-info-circle"></i>
+                            No effort data available
+                        </div>
+                        }
+                    </p-card>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <div class="dialog-footer">
+            <span class="footer-info">
+                <i class="pi pi-inbox"></i>
+                {{ selectedCount }} email(s) will be sent
+            </span>
+            <div class="footer-actions">
+                <p-button
+                    type="button"
+                    label="Cancel"
+                    icon="pi pi-times"
+                    [text]="true"
+                    severity="secondary"
+                    (onClick)="onHide()"
+                ></p-button>
+                <p-button
+                    type="button"
+                    label="Send"
+                    icon="pi pi-send"
+                    [disabled]="!isFormValid"
+                    (onClick)="onSend()"
+                ></p-button>
+            </div>
+        </div>
+    </ng-template>
+</p-dialog>
+

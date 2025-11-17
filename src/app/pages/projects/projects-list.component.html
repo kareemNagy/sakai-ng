@@ -119,15 +119,34 @@
             [value]="filteredProjects" 
             [loading]="loading"
             styleClass="p-datatable-sm"
-            responsiveLayout="scroll">
+            responsiveLayout="scroll"
+            [sortMode]="'multiple'">
             <ng-template pTemplate="header">
                 <tr>
-                    <th>Project Name</th>
-                    <th>Manager</th>
-                    <th>Status</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>DevOps</th>
+                    <th pSortableColumn="projectName">
+                        Project Name
+                        <p-sortIcon field="projectName"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="projectManagerName">
+                        Manager
+                        <p-sortIcon field="projectManagerName"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="isActive">
+                        Status
+                        <p-sortIcon field="isActive"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="startDate">
+                        Start Date
+                        <p-sortIcon field="startDate"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="endDate">
+                        End Date
+                        <p-sortIcon field="endDate"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="devOpsProjectUrl">
+                        DevOps
+                        <p-sortIcon field="devOpsProjectUrl"></p-sortIcon>
+                    </th>
                     <th style="width: 250px;">Actions</th>
                 </tr>
             </ng-template>
