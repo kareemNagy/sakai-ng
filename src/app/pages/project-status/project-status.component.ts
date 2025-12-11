@@ -71,6 +71,10 @@ interface ProjectStatusData {
     teamMembers?: TeamMember[];
     showTeamMembers?: boolean;
     loadingAreaPathChange?: boolean;
+    showReworkChart?: boolean;
+    loadingReworkChart?: boolean;
+    reworkChartData?: any;
+    chartInstance?: Chart | null;
 }
 
 @Component({
@@ -102,11 +106,6 @@ export class ProjectStatusComponent implements OnInit {
     showTasksModal = false;
     modalTasks: Task[] = [];
     modalProjectName = '';
-    
-    // Rework chart modal
-    showReworkChartModal = false;
-    reworkChartData: any = null;
-    chartInstance: Chart | null = null;
 
     // General Notes
     generalNotes: string = '';
@@ -357,155 +356,182 @@ export class ProjectStatusComponent implements OnInit {
         project.showTeamMembers = !project.showTeamMembers;
     }
 
-    showReworkChart(project: ProjectStatusData): void {
-        if (!project.tasks || project.tasks.length === 0) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Warning',
-                detail: 'No tasks available to display chart'
-            });
-            return;
-        }
-
-        const userMap = new Map<string, { coding: number; bugFixing: number }>();
-
-        project.tasks.forEach(task => {
-            const userName = task.assignedTo || 'Unassigned';
-            const subActivity = (task.subActivity || '').toLowerCase();
-            const hours = task.completedWork || 0;
-
-            if (hours > 0) {
-                if (!userMap.has(userName)) {
-                    userMap.set(userName, { coding: 0, bugFixing: 0 });
+    toggleReworkChart(project: ProjectStatusData): void {
+        if (project.showReworkChart) {
+            // Hide chart
+            project.showReworkChart = false;
+            if (project.chartInstance) {
+                try {
+                    project.chartInstance.destroy();
+                } catch (e) {
+                    console.warn('Error destroying chart:', e);
                 }
-
-                const userStats = userMap.get(userName)!;
-
-                if (subActivity.includes('bug fixing') || subActivity.includes('bugfixing')) {
-                    userStats.bugFixing += hours;
-                } else if (subActivity.includes('coding')) {
-                    userStats.coding += hours;
-                }
+                project.chartInstance = null;
             }
-        });
+            project.reworkChartData = null;
+        } else {
+            // Show chart - fetch data
+            project.showReworkChart = true;
+            project.loadingReworkChart = true;
 
-        const chartData = Array.from(userMap.entries())
-            .map(([userName, stats]) => ({
-                userName,
-                coding: stats.coding,
-                bugFixing: stats.bugFixing
-            }))
-            .filter(stat => stat.coding > 0 || stat.bugFixing > 0)
-            .sort((a, b) => (b.coding + b.bugFixing) - (a.coding + a.bugFixing));
+            // Build query string with area paths filter if applicable
+            let queryParams = '';
+            if (project.selectedAreaPaths && project.selectedAreaPaths.length > 0) {
+                queryParams = '?' + project.selectedAreaPaths.map(path => 
+                    `areaPaths=${encodeURIComponent(path)}`
+                ).join('&');
+            }
 
-        if (chartData.length === 0) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Warning',
-                detail: 'No coding or bug fixing data available'
+            // Fetch chart data from backend
+            this.http.get<any>(`${environment.apiUrl}/projects/${project.projectId}/rework-chart${queryParams}`).subscribe({
+                next: (response) => {
+                    if (response.success) {
+                        const chartData = response.data.chartData;
+
+                        if (!chartData || chartData.length === 0) {
+                            this.messageService.add({
+                                severity: 'warn',
+                                summary: 'Warning',
+                                detail: 'No coding or bug fixing data available'
+                            });
+                            project.loadingReworkChart = false;
+                            project.showReworkChart = false;
+                            return;
+                        }
+
+                        project.reworkChartData = {
+                            projectName: response.data.projectName,
+                            chartData
+                        };
+                        project.loadingReworkChart = false;
+
+                        // Create chart after DOM updates
+                        setTimeout(() => {
+                            this.createReworkChart(project);
+                        }, 0);
+                    }
+                },
+                error: (err) => {
+                    console.error('Error fetching rework chart data:', err);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to load rework chart data'
+                    });
+                    project.loadingReworkChart = false;
+                    project.showReworkChart = false;
+                }
             });
-            return;
         }
-
-        this.reworkChartData = {
-            projectName: project.projectName,
-            chartData
-        };
-        this.showReworkChartModal = true;
-
-        setTimeout(() => this.createReworkChart(), 100);
     }
 
-    createReworkChart(): void {
-        const canvas = document.getElementById('reworkChartCanvas') as HTMLCanvasElement;
-        if (!canvas || !this.reworkChartData) {
+    createReworkChart(project: ProjectStatusData): void {
+        const canvasId = `reworkChart-${project.projectId}`;
+        const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+        if (!canvas) {
+            console.warn('Canvas element not found:', canvasId);
+            return;
+        }
+        
+        if (!project.reworkChartData || !project.reworkChartData.chartData) {
+            console.warn('No chart data available');
             return;
         }
 
-        if (this.chartInstance) {
-            this.chartInstance.destroy();
+        // Destroy existing chart instance for this project
+        if (project.chartInstance) {
+            try {
+                project.chartInstance.destroy();
+                project.chartInstance = null;
+            } catch (e) {
+                console.warn('Error destroying previous chart:', e);
+            }
         }
 
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) {
+            console.warn('Could not get canvas context');
+            return;
+        }
 
-        const data = this.reworkChartData.chartData;
+        const data = project.reworkChartData.chartData;
+        
+        if (!data || data.length === 0) {
+            console.warn('Chart data is empty');
+            return;
+        }
 
-        this.chartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.map((d: any) => d.userName),
-                datasets: [
-                    {
-                        label: 'Coding Hours',
-                        data: data.map((d: any) => d.coding),
-                        backgroundColor: 'rgba(34, 197, 94, 0.7)',
-                        borderColor: 'rgb(34, 197, 94)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Bug Fixing Hours',
-                        data: data.map((d: any) => d.bugFixing),
-                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                        borderColor: 'rgb(239, 68, 68)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Coding vs Bug Fixing Hours by Team Member',
-                        font: {
-                            size: 16,
-                            weight: 'bold'
+        try {
+            project.chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map((d: any) => d.userName),
+                    datasets: [
+                        {
+                            label: 'Coding Hours',
+                            data: data.map((d: any) => d.coding),
+                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                            borderColor: 'rgb(34, 197, 94)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Bug Fixing Hours',
+                            data: data.map((d: any) => d.bugFixing),
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: 'rgb(239, 68, 68)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                footer: (tooltipItems: any) => {
+                                    const index = tooltipItems[0].dataIndex;
+                                    const coding = data[index].coding;
+                                    const bugFixing = data[index].bugFixing;
+                                    const rework = coding > 0 ? ((bugFixing / coding) * 100).toFixed(1) : '0.0';
+                                    return `Rework: ${rework}%`;
+                                }
+                            }
                         }
                     },
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            footer: (tooltipItems: any) => {
-                                const index = tooltipItems[0].dataIndex;
-                                const coding = data[index].coding;
-                                const bugFixing = data[index].bugFixing;
-                                const rework = coding > 0 ? ((bugFixing / coding) * 100).toFixed(1) : '0.0';
-                                return `Rework: ${rework}%`;
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Hours'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Team Members'
                             }
                         }
                     }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Hours'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Team Members'
-                        }
-                    }
                 }
-            }
-        });
-    }
-
-    closeReworkChartModal(): void {
-        this.showReworkChartModal = false;
-        if (this.chartInstance) {
-            this.chartInstance.destroy();
-            this.chartInstance = null;
+            });
+            console.log('Chart created successfully for project:', project.projectId);
+        } catch (error) {
+            console.error('Error creating chart:', error);
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to create chart visualization'
+            });
         }
-        this.reworkChartData = null;
     }
 
     toggleEditGeneralNotes(): void {

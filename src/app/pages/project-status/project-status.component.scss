@@ -165,7 +165,110 @@
     }
 }
 
-// Area Path Filters
+// Enhanced Filter Card
+.filter-card {
+    ::ng-deep .p-card-body {
+        padding: 1rem;
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+
+        .filter-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+
+            i {
+                font-size: 1.2rem;
+                color: var(--primary-color);
+            }
+
+            h4 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--text-color);
+            }
+        }
+
+        .filter-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+    }
+}
+
+// Enhanced Area Path Filters with Chip Style
+.area-path-filters-enhanced {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-50);
+    border: 2px solid var(--surface-200);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+
+    &:hover {
+        background: var(--surface-100);
+        border-color: var(--primary-300);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    &.selected {
+        background: var(--primary-50);
+        border-color: var(--primary-500);
+        box-shadow: 0 2px 6px rgba(var(--primary-500), 0.2);
+
+        label {
+            color: var(--primary-700);
+            font-weight: 600;
+        }
+    }
+
+    label {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-color);
+        transition: all 0.2s;
+
+        .path-name {
+            white-space: nowrap;
+        }
+    }
+
+    ::ng-deep .p-checkbox {
+        .p-checkbox-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+        }
+    }
+}
+
+// Legacy Area Path Filters (kept for backward compatibility)
 .area-path-filters {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -378,7 +481,219 @@
     width: 100%;
 }
 
+// Details Grid Layout
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+// Rework Chart Card
+.rework-chart-card {
+    ::ng-deep .p-card-body {
+        padding: 1rem;
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+
+        h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-color);
+
+            i {
+                color: var(--primary-color);
+            }
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+    }
+
+    .chart-info {
+        padding: 0.5rem;
+        background: var(--surface-50);
+        border-radius: 4px;
+        border-left: 3px solid var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .chart-description {
+        font-size: 0.85rem;
+        color: var(--text-color-secondary);
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+}
+
+// Tasks Card
+.tasks-card {
+    ::ng-deep .p-card-body {
+        padding: 1rem;
+    }
+}
+
+.card-header-custom {
+    margin-bottom: 1rem;
+
+    h4 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-color);
+
+        i {
+            color: var(--primary-color);
+        }
+    }
+}
+
+.tasks-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.task-item-compact {
+    padding: 0.75rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 6px;
+    background: var(--surface-50);
+    transition: all 0.2s;
+
+    &:hover {
+        background: var(--surface-100);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .task-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .task-title-compact {
+        font-size: 0.9rem;
+        color: var(--text-color);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .task-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+
+        .task-assignee {
+            color: var(--text-color-secondary);
+            font-size: 0.8rem;
+        }
+    }
+}
+
+// Team Members Card
+.team-members-card {
+    ::ng-deep .p-card-body {
+        padding: 1rem;
+    }
+}
+
+.team-members-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.team-member-item-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 6px;
+    background: var(--surface-50);
+    transition: all 0.2s;
+
+    &:hover {
+        background: var(--surface-100);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .member-avatar-small {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .member-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-width: 0;
+
+        strong {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        small {
+            font-size: 0.8rem;
+            color: var(--text-color-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .member-role {
+            font-size: 0.75rem;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+    }
+}
+
 // Responsive
+@media (max-width: 992px) {
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 768px) {
     .project-status-container {
         padding: 1rem;
@@ -402,6 +717,31 @@
         grid-template-columns: 1fr;
     }
 
+    .area-path-filters-enhanced {
+        gap: 0.5rem;
+
+        .filter-chip {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.6rem;
+
+            label {
+                font-size: 0.85rem;
+            }
+        }
+    }
+
+    .filter-card {
+        .filter-header {
+            flex-direction: column;
+            align-items: flex-start;
+
+            .filter-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    }
+
     .team-members-grid {
         grid-template-columns: 1fr;
     }
@@ -416,7 +756,12 @@
     }
 
     .chart-container {
-        height: 300px;
+        height: 250px;
+    }
+
+    .details-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
     }
 }
 
