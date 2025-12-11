@@ -124,6 +124,15 @@
                         <div class="todo-card__actions">
                             <p-button
                                 type="button"
+                                icon="pi pi-pencil"
+                                [text]="true"
+                                [rounded]="true"
+                                severity="info"
+                                [attr.pTooltip]="'Edit todo'"
+                                (onClick)="openEditDialog(todo)"
+                            ></p-button>
+                            <p-button
+                                type="button"
                                 icon="pi pi-star"
                                 [text]="true"
                                 [rounded]="true"
@@ -195,11 +204,11 @@
 
 <p-dialog
     [(visible)]="displayAddDialog"
-    header="Add Todo"
+    [header]="isEditMode ? 'Edit Todo' : 'Add Todo'"
     [modal]="true"
     [style]="{ width: '500px' }"
     [breakpoints]="{ '960px': '90vw' }"
-    (onHide)="saving = false"
+    (onHide)="saving = false; isEditMode = false"
 >
     <div class="todo-form">
         <div class="form-field">
@@ -257,6 +266,18 @@
         </div>
 
         <div class="form-field">
+            <label>Due Date</label>
+            <p-datepicker
+                [(ngModel)]="newTodo.dueDate"
+                [showIcon]="true"
+                dateFormat="yy-mm-dd"
+                [showTime]="false"
+                placeholder="Select due date"
+                class="w-full"
+            ></p-datepicker>
+        </div>
+
+        <div class="form-field">
             <label>Assign To</label>
             <p-select
                 [options]="teamMembers"
@@ -289,8 +310,8 @@
         ></p-button>
         <p-button
             type="button"
-            label="Create"
-            icon="pi pi-check"
+            [label]="isEditMode ? 'Update' : 'Create'"
+            [icon]="isEditMode ? 'pi pi-save' : 'pi pi-check'"
             [loading]="saving"
             (onClick)="saveTodo()"
         ></p-button>

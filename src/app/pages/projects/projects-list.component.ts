@@ -357,6 +357,46 @@ export class ProjectsListComponent implements OnInit {
     });
   }
 
+  importSingleDevOpsProject(project: Project & { devOpsData?: DevOpsProject }): void {
+    if (!project.devOpsData) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'No DevOps data available for this project'
+      });
+      return;
+    }
+
+    this.confirmationService.confirm({
+      message: `Import "${project.projectName}" from DevOps?`,
+      header: 'Import Project',
+      icon: 'pi pi-download',
+      accept: () => {
+        this.loading = true;
+        this.projectService.importDevOpsProject(project.devOpsData!, 'Unassigned').subscribe({
+          next: (imported) => {
+            this.loading = false;
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: `Successfully imported "${imported.projectName}"`
+            });
+            this.loadProjects();
+          },
+          error: (err) => {
+            console.error('Import error:', err);
+            this.loading = false;
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Failed to import project'
+            });
+          }
+        });
+      }
+    });
+  }
+
   importAllDevOpsProjects(): void {
     if (this.devOpsProjectsToImport.length === 0) {
       this.messageService.add({

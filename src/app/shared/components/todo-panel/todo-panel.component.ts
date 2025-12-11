@@ -17,6 +17,7 @@ import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TooltipModule } from 'primeng/tooltip';
+import { DatePickerModule } from 'primeng/datepicker';
 
 @Component({
     selector: 'app-todo-panel',
@@ -34,7 +35,8 @@ import { TooltipModule } from 'primeng/tooltip';
         CardModule,
         DialogModule,
         ToastModule,
-        TooltipModule
+        TooltipModule,
+        DatePickerModule
     ],
     providers: [MessageService],
     templateUrl: './todo-panel.component.html',
@@ -53,6 +55,8 @@ export class TodoPanelComponent implements OnDestroy {
 
     displayAddDialog = false;
     saving = false;
+    isEditMode = false;
+    editingTodoId: number | null = null;
 
     newTodo: Partial<Todo> = {
         title: '',
@@ -108,12 +112,31 @@ export class TodoPanelComponent implements OnDestroy {
     }
 
     openAddDialog(): void {
+        this.isEditMode = false;
+        this.editingTodoId = null;
         this.newTodo = {
             title: '',
             description: '',
             priority: 'Medium',
             status: 'Pending',
             isImportant: false
+        };
+        this.displayAddDialog = true;
+    }
+
+    openEditDialog(todo: Todo): void {
+        if (!todo.id) return;
+        
+        this.isEditMode = true;
+        this.editingTodoId = todo.id;
+        this.newTodo = {
+            title: todo.title || '',
+            description: todo.description || '',
+            priority: todo.priority || 'Medium',
+            status: todo.status || 'Pending',
+            dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
+            teamMemberId: todo.teamMemberId,
+            isImportant: todo.isImportant ?? false
         };
         this.displayAddDialog = true;
     }
@@ -129,35 +152,68 @@ export class TodoPanelComponent implements OnDestroy {
         }
 
         this.saving = true;
-        this.subscriptions.add(
-            this.todoService.createTodo({
-                title: this.newTodo.title?.trim(),
-                description: this.newTodo.description?.trim(),
-                priority: this.newTodo.priority,
-                status: this.newTodo.status,
-                dueDate: this.newTodo.dueDate,
-                teamMemberId: this.newTodo.teamMemberId,
-                isImportant: this.newTodo.isImportant ?? false
-            }).subscribe({
-                next: () => {
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Todo Created',
-                        detail: 'The todo item has been created successfully'
-                    });
-                    this.displayAddDialog = false;
-                    this.saving = false;
-                },
-                error: () => {
-                    this.saving = false;
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: 'Failed to create todo'
-                    });
-                }
-            })
-        );
+
+        const todoData = {
+            title: this.newTodo.title?.trim(),
+            description: this.newTodo.description?.trim(),
+            priority: this.newTodo.priority,
+            status: this.newTodo.status,
+            dueDate: this.newTodo.dueDate instanceof (Date as any) 
+                ? (this.newTodo.dueDate as unknown as Date).toISOString() 
+                : (this.newTodo.dueDate as string),
+            teamMemberId: this.newTodo.teamMemberId,
+            isImportant: this.newTodo.isImportant ?? false
+        };
+
+        if (this.isEditMode && this.editingTodoId) {
+            // Update existing todo
+            this.subscriptions.add(
+                this.todoService.updateTodo(this.editingTodoId, todoData).subscribe({
+                    next: () => {
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Todo Updated',
+                            detail: 'The todo item has been updated successfully'
+                        });
+                        this.displayAddDialog = false;
+                        this.isEditMode = false;
+                        this.editingTodoId = null;
+                        this.saving = false;
+                    },
+                    error: () => {
+                        this.saving = false;
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Error',
+                            detail: 'Failed to update todo'
+                        });
+                    }
+                })
+            );
+        } else {
+            // Create new todo
+            this.subscriptions.add(
+                this.todoService.createTodo(todoData).subscribe({
+                    next: () => {
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Todo Created',
+                            detail: 'The todo item has been created successfully'
+                        });
+                        this.displayAddDialog = false;
+                        this.saving = false;
+                    },
+                    error: () => {
+                        this.saving = false;
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Error',
+                            detail: 'Failed to create todo'
+                        });
+                    }
+                })
+            );
+        }
     }
 
     applyFilters(): void {

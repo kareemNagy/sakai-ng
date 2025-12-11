@@ -30,7 +30,7 @@ export class ProjectService {
    * Construct DevOps project URL from project name
    */
   private buildDevOpsProjectUrl(projectName: string): string {
-    return `https://dev.azure.com/Link-Dev/${encodeURIComponent(projectName)}`;
+    return `https://dev.azure.com/kareemnagy2025/${encodeURIComponent(projectName)}`;
   }
 
   /**

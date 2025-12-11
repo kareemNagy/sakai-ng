@@ -120,8 +120,13 @@ export class TaskImportComponent implements OnInit {
     );
   }
 
-  selectTeamMember(task: TaskTemplate, member: TeamMember): void {
-    task.assignedTo = member.email;
+  onTeamMemberSelect(event: any, task: TaskTemplate): void {
+    // Extract email string from the selected member object
+    if (event.value && event.value.email) {
+      task.assignedTo = event.value.email;
+    } else if (typeof event === 'string') {
+      task.assignedTo = event;
+    }
   }
 
   getTaskKey(storyId: number, taskIndex: number): string {
@@ -466,6 +471,7 @@ export class TaskImportComponent implements OnInit {
       task.subActivity && 
       task.subActivity.trim() !== '' &&
       task.assignedTo &&
+      typeof task.assignedTo === 'string' &&
       task.assignedTo.trim() !== '' &&
       task.originalEstimate !== undefined &&
       task.originalEstimate !== null &&
@@ -483,7 +489,7 @@ export class TaskImportComponent implements OnInit {
     if (!task.title || task.title.trim() === '') errors.push('Title required');
     if (!task.activity || task.activity.trim() === '') errors.push('Activity required');
     if (!task.subActivity || task.subActivity.trim() === '') errors.push('Sub Activity required');
-    if (!task.assignedTo || task.assignedTo.trim() === '') errors.push('Assigned To required');
+    if (!task.assignedTo || typeof task.assignedTo !== 'string' || task.assignedTo.trim() === '') errors.push('Assigned To required');
     if (!task.originalEstimate || task.originalEstimate <= 0) errors.push('Estimate required');
     return errors;
   }

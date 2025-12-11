@@ -100,7 +100,7 @@ export interface Todo {
   description?: string;
   priority?: 'Low' | 'Medium' | 'High'; // Must match DB constraint
   status?: 'Pending' | 'In Progress' | 'Completed'; // Must match DB constraint
-  dueDate?: string;
+  dueDate?: string | Date;
   isCompleted?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -201,5 +201,69 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
   error?: string;
+}
+
+// ==================== AUTH MODELS ====================
+export interface User {
+  userId: number;
+  azureAdUserId: string;
+  email: string;
+  displayName: string;
+  firstName?: string;
+  lastName?: string;
+  jobTitle?: string;
+  department?: string;
+  profilePicture?: string;
+  teamMemberId?: number;
+  teamMemberName?: string;
+  teamMemberTitle?: string;
+  hasDevOpsPAT: boolean;
+  isActive: boolean;
+  lastLoginAt?: string;
+  activeSessions?: number;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  data?: {
+    user: User;
+    token: string;
+    refreshToken: string;
+    expiresIn: string;
+    sessionExpires?: Date;
+  };
+  message?: string;
+  error?: string;
+}
+
+export interface LoginUrlResponse {
+  success: boolean;
+  loginUrl?: string;
+  error?: string;
+  message?: string;
+}
+
+export interface TokenRefreshRequest {
+  refreshToken: string;
+}
+
+export interface TokenRefreshResponse {
+  success: boolean;
+  data?: {
+    token: string;
+    expiresIn: string;
+    expiresAt: Date;
+  };
+  message?: string;
+  error?: string;
+}
+
+export interface SessionInfo {
+  sessionId: number;
+  ipAddress: string;
+  userAgent: string;
+  createdAt: string;
+  lastAccessedAt: string;
+  expiresAt: string;
 }
 

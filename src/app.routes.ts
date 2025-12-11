@@ -2,12 +2,13 @@ import { Routes } from '@angular/router';
 import { AppLayout } from './app/layout/component/app.layout';
 import { Dashboard } from './app/pages/dashboard/dashboard';
 import { Notfound } from './app/pages/notfound/notfound';
+import { authGuard } from './app/core/guards/auth.guard';
 
 export const appRoutes: Routes = [
     {
         path: '',
         component: AppLayout,
-        // canActivate: [authGuard],
+        canActivate: [authGuard],
         children: [
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
             { path: 'dashboard', component: Dashboard },
@@ -24,8 +25,16 @@ export const appRoutes: Routes = [
                 loadComponent: () => import('./app/pages/project-kpi/project-kpi.component').then(m => m.ProjectKpiComponent) 
             },
             { 
+                path: 'team-member-kpi', 
+                loadComponent: () => import('./app/pages/team-member-kpi/team-member-kpi.component').then(m => m.TeamMemberKpiComponent) 
+            },
+            { 
                 path: 'project-status', 
                 loadComponent: () => import('./app/pages/project-status/project-status.component').then(m => m.ProjectStatusComponent) 
+            },
+            { 
+                path: 'daily-time-logs', 
+                loadComponent: () => import('./app/pages/daily-time-logs/daily-time-logs.component').then(m => m.DailyTimeLogsComponent) 
             },
             { 
                 path: 'task-import', 

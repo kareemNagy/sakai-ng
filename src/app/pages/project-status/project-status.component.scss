@@ -97,8 +97,28 @@
 .accordion-header-content {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 1rem;
     width: 100%;
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        flex-wrap: wrap;
+
+        strong {
+            font-size: 1.1rem;
+        }
+
+        .header-tags {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+    }
 }
 
 // Statistics Grid
@@ -165,10 +185,106 @@
     }
 }
 
+// Team Members Stats Card
+.team-stats-card {
+    .team-members-scrollable {
+        margin-top: 0.75rem;
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding-right: 0.25rem;
+
+        // Custom scrollbar styling
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: var(--surface-100);
+            border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: var(--primary-300);
+            border-radius: 3px;
+            
+            &:hover {
+                background: var(--primary-400);
+            }
+        }
+
+        .team-member-mini {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--surface-50);
+            border-radius: 6px;
+            border: 1px solid var(--surface-border);
+            transition: all 0.2s;
+
+            &:hover {
+                background: var(--surface-100);
+                border-color: var(--primary-200);
+                transform: translateX(2px);
+            }
+
+            .member-avatar-tiny {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: var(--primary-color);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                font-size: 0.85rem;
+                flex-shrink: 0;
+            }
+
+            .member-info-tiny {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+                flex: 1;
+                min-width: 0;
+
+                .member-name-tiny {
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    color: var(--text-color);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .member-percentage {
+                    font-size: 0.75rem;
+                    color: var(--primary-color);
+                    font-weight: 600;
+                    background: var(--primary-50);
+                    padding: 0.125rem 0.375rem;
+                    border-radius: 4px;
+                    display: inline-block;
+                    width: fit-content;
+                }
+            }
+        }
+    }
+}
+
 // Enhanced Filter Card
 .filter-card {
+    margin-bottom: 1.5rem !important; // Add space at bottom
+    
     ::ng-deep .p-card-body {
         padding: 1rem;
+        background: linear-gradient(135deg, var(--primary-50) 0%, var(--surface-50) 100%);
+        border-radius: 8px;
     }
 
     .filter-header {
@@ -481,15 +597,106 @@
     width: 100%;
 }
 
-// Details Grid Layout
-.details-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+// Rework Chart Section (Full Width, No Grid)
+.rework-chart-section {
     margin-top: 1rem;
 }
 
-// Rework Chart Card
+// Rework Chart Section (No Card Wrapper) - Updated
+.rework-chart-section {
+    background: var(--surface-card);
+    border-radius: 8px;
+    border: 1px solid var(--surface-border);
+    overflow: hidden;
+    width: 100%;
+
+    .rework-chart-content {
+        padding: 1.5rem;
+
+        .chart-header-inline {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--surface-border);
+
+            h4 {
+                margin: 0;
+                font-size: 1.2rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                color: var(--text-color);
+
+                i {
+                    color: var(--primary-color);
+                    font-size: 1.3rem;
+                }
+            }
+
+            .chart-info {
+                margin-top: 0.5rem;
+                padding: 0.4rem 0.6rem;
+                background: var(--surface-50);
+                border-radius: 4px;
+                border-left: 3px solid var(--primary-color);
+                font-size: 0.85rem;
+                color: var(--text-color-secondary);
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+
+                i {
+                    font-size: 0.9rem;
+                }
+            }
+        }
+
+        .chart-footer {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-top: 1px solid var(--surface-border);
+            background: var(--surface-50);
+            border-radius: 4px;
+
+            .chart-legend-info {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1.5rem;
+                justify-content: center;
+                align-items: center;
+
+                .legend-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    font-size: 0.85rem;
+                    color: var(--text-color);
+
+                    .legend-color {
+                        display: inline-block;
+                        width: 16px;
+                        height: 16px;
+                        border-radius: 3px;
+                        border: 1px solid rgba(0, 0, 0, 0.1);
+                    }
+
+                    i {
+                        font-size: 0.9rem;
+                    }
+
+                    strong {
+                        color: var(--primary-color);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Legacy Rework Chart Card (kept for compatibility)
 .rework-chart-card {
     ::ng-deep .p-card-body {
         padding: 1rem;
@@ -689,8 +896,35 @@
 
 // Responsive
 @media (max-width: 992px) {
-    .details-grid {
-        grid-template-columns: 1fr;
+    .accordion-header-content {
+        .header-left {
+            flex-direction: column;
+            align-items: flex-start;
+            
+            .header-tags {
+                width: 100%;
+                
+                ::ng-deep button {
+                    flex: 1;
+                }
+            }
+        }
+    }
+
+    .rework-chart-section {
+        .rework-chart-content {
+            padding: 1rem;
+
+            .chart-container {
+                height: 250px !important;
+            }
+        }
+    }
+
+    .team-stats-card {
+        .team-members-scrollable {
+            max-height: 150px;
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -51,7 +51,7 @@ interface WorkItem {
     templateUrl: './project-kpi.component.html',
     styleUrls: ['./project-kpi.component.scss']
 })
-export class ProjectKpiComponent implements OnInit, AfterViewInit {
+export class ProjectKpiComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('estimateActualChart') chartCanvas!: ElementRef<HTMLCanvasElement>;
     @ViewChild('codingBugFixingChart') codingBugFixingChartCanvas!: ElementRef<HTMLCanvasElement>;
     @ViewChild('reworkChart') reworkChartCanvas!: ElementRef<HTMLCanvasElement>;
@@ -337,74 +337,96 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
     }
 
     createOrUpdateChart(): void {
-        if (!this.chartCanvas || this.workItemsDetails.length === 0) {
-            return;
-        }
+        try {
+            if (!this.chartCanvas || this.workItemsDetails.length === 0) {
+                console.log('Estimate/Actual chart: Canvas or data not ready');
+                return;
+            }
 
-        const userStats = this.aggregateDataByUser();
-        const labels = userStats.map(stat => stat.userName);
-        const estimateData = userStats.map(stat => stat.totalEstimate);
-        const actualData = userStats.map(stat => stat.totalActual);
+            const userStats = this.aggregateDataByUser();
+            const labels = userStats.map(stat => stat.userName);
+            const estimateData = userStats.map(stat => stat.totalEstimate);
+            const actualData = userStats.map(stat => stat.totalActual);
 
-        if (this.chart) {
-            this.chart.destroy();
-        }
+            if (this.chart) {
+                try {
+                    this.chart.destroy();
+                } catch (e) {
+                    console.warn('Error destroying estimate/actual chart:', e);
+                }
+                this.chart = undefined;
+            }
 
-        const ctx = this.chartCanvas.nativeElement.getContext('2d');
-        if (!ctx) return;
+            const ctx = this.chartCanvas.nativeElement.getContext('2d');
+            if (!ctx) {
+                console.warn('Could not get estimate/actual chart context');
+                return;
+            }
 
-        this.chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Estimate',
-                        data: estimateData,
-                        backgroundColor: '#FFA726',
-                        borderColor: '#FF9800',
-                        borderWidth: 1
+            this.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Estimate',
+                            data: estimateData,
+                            backgroundColor: '#FFA726',
+                            borderColor: '#FF9800',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Actual',
+                            data: actualData,
+                            backgroundColor: '#AB47BC',
+                            borderColor: '#9C27B0',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 500
                     },
-                    {
-                        label: 'Actual',
-                        data: actualData,
-                        backgroundColor: '#AB47BC',
-                        borderColor: '#9C27B0',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                onClick: (event, activeElements) => {
-                    if (activeElements.length > 0) {
-                        const index = activeElements[0].index;
-                        const userName = labels[index];
-                        if (userName) {
-                            this.openEmailModal(userName, 'estimate-actual');
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const userName = labels[index];
+                            if (userName) {
+                                this.openEmailModal(userName, 'estimate-actual');
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Total - Estimate vs. Actual / User',
+                            font: { size: 18, weight: 'bold' }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Hours' }
                         }
                     }
-                },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Total - Estimate vs. Actual / User',
-                        font: { size: 18, weight: 'bold' }
-                    },
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Hours' }
-                    }
                 }
-            }
-        });
+            });
+            console.log('Estimate/Actual chart created successfully');
+        } catch (error) {
+            console.error('Error creating estimate/actual chart:', error);
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to create estimate/actual chart'
+            });
+        }
     }
 
     private aggregateDataByUser(): { userName: string; totalEstimate: number; totalActual: number }[] {
@@ -434,70 +456,92 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
     }
 
     createOrUpdateCodingBugFixingChart(): void {
-        if (!this.codingBugFixingChartCanvas || this.workItemsDetails.length === 0) {
-            return;
-        }
+        try {
+            if (!this.codingBugFixingChartCanvas || this.workItemsDetails.length === 0) {
+                console.log('Coding/BugFixing chart: Canvas or data not ready');
+                return;
+            }
 
-        const userStats = this.aggregateActivityByUser();
-        const labels = userStats.map(stat => stat.userName);
-        const codingData = userStats.map(stat => stat.coding);
-        const bugFixingData = userStats.map(stat => stat.bugFixing);
+            const userStats = this.aggregateActivityByUser();
+            const labels = userStats.map(stat => stat.userName);
+            const codingData = userStats.map(stat => stat.coding);
+            const bugFixingData = userStats.map(stat => stat.bugFixing);
 
-        if (this.codingBugFixingChart) {
-            this.codingBugFixingChart.destroy();
-        }
+            if (this.codingBugFixingChart) {
+                try {
+                    this.codingBugFixingChart.destroy();
+                } catch (e) {
+                    console.warn('Error destroying coding/bugfixing chart:', e);
+                }
+                this.codingBugFixingChart = undefined;
+            }
 
-        const ctx = this.codingBugFixingChartCanvas.nativeElement.getContext('2d');
-        if (!ctx) return;
+            const ctx = this.codingBugFixingChartCanvas.nativeElement.getContext('2d');
+            if (!ctx) {
+                console.warn('Could not get coding/bugfixing chart context');
+                return;
+            }
 
-        this.codingBugFixingChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Coding',
-                        data: codingData,
-                        backgroundColor: '#66BB6A',
-                        borderColor: '#4CAF50',
-                        borderWidth: 1
+            this.codingBugFixingChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Coding',
+                            data: codingData,
+                            backgroundColor: '#66BB6A',
+                            borderColor: '#4CAF50',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Bug Fixing',
+                            data: bugFixingData,
+                            backgroundColor: '#FFA726',
+                            borderColor: '#FF9800',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 500
                     },
-                    {
-                        label: 'Bug Fixing',
-                        data: bugFixingData,
-                        backgroundColor: '#FFA726',
-                        borderColor: '#FF9800',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                onClick: (event, activeElements) => {
-                    if (activeElements.length > 0) {
-                        const index = activeElements[0].index;
-                        const userName = labels[index];
-                        if (userName) {
-                            this.openEmailModal(userName, 'coding-bugfixing');
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const userName = labels[index];
+                            if (userName) {
+                                this.openEmailModal(userName, 'coding-bugfixing');
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Coding vs Bug Fixing / User',
+                            font: { size: 18, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Hours' }
                         }
                     }
-                },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Coding vs Bug Fixing / User',
-                        font: { size: 18, weight: 'bold' }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Hours' }
-                    }
                 }
-            }
-        });
+            });
+            console.log('Coding/BugFixing chart created successfully');
+        } catch (error) {
+            console.error('Error creating coding/bugfixing chart:', error);
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to create coding/bugfixing chart'
+            });
+        }
     }
 
     private aggregateActivityByUser(): { userName: string; coding: number; bugFixing: number }[] {
@@ -535,67 +579,89 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
     }
 
     createOrUpdateReworkChart(): void {
-        if (!this.reworkChartCanvas || this.workItemsDetails.length === 0) {
-            return;
-        }
+        try {
+            if (!this.reworkChartCanvas || this.workItemsDetails.length === 0) {
+                console.log('Rework chart: Canvas or data not ready');
+                return;
+            }
 
-        const userStats = this.calculateReworkPercentageByUser();
-        const labels = userStats.map(stat => stat.userName);
-        const reworkPercentages = userStats.map(stat => stat.reworkPercentage);
+            const userStats = this.calculateReworkPercentageByUser();
+            const labels = userStats.map(stat => stat.userName);
+            const reworkPercentages = userStats.map(stat => stat.reworkPercentage);
 
-        if (this.reworkChart) {
-            this.reworkChart.destroy();
-        }
+            if (this.reworkChart) {
+                try {
+                    this.reworkChart.destroy();
+                } catch (e) {
+                    console.warn('Error destroying rework chart:', e);
+                }
+                this.reworkChart = undefined;
+            }
 
-        const ctx = this.reworkChartCanvas.nativeElement.getContext('2d');
-        if (!ctx) return;
+            const ctx = this.reworkChartCanvas.nativeElement.getContext('2d');
+            if (!ctx) {
+                console.warn('Could not get rework chart context');
+                return;
+            }
 
-        this.reworkChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Rework %',
-                        data: reworkPercentages,
-                        backgroundColor: '#B71C1C',
-                        borderColor: '#8B0000',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                onClick: (event, activeElements) => {
-                    if (activeElements.length > 0) {
-                        const index = activeElements[0].index;
-                        const userName = labels[index];
-                        if (userName) {
-                            this.openEmailModal(userName, 'rework');
+            this.reworkChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Rework %',
+                            data: reworkPercentages,
+                            backgroundColor: '#B71C1C',
+                            borderColor: '#8B0000',
+                            borderWidth: 1
                         }
-                    }
+                    ]
                 },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Rework % / User',
-                        font: { size: 18, weight: 'bold' }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 500
                     },
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const userName = labels[index];
+                            if (userName) {
+                                this.openEmailModal(userName, 'rework');
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Rework % / User',
+                            font: { size: 18, weight: 'bold' }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+            console.log('Rework chart created successfully');
+        } catch (error) {
+            console.error('Error creating rework chart:', error);
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to create rework chart'
+            });
+        }
     }
 
     private calculateReworkPercentageByUser(): { userName: string; reworkPercentage: number }[] {
@@ -634,23 +700,33 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
     }
 
     createOrUpdateSubActivityChart(): void {
-        if (!this.subActivityChartCanvas || this.workItemsDetails.length === 0) {
-            return;
-        }
+        try {
+            if (!this.subActivityChartCanvas || this.workItemsDetails.length === 0) {
+                console.log('SubActivity chart: Canvas or data not ready');
+                return;
+            }
 
-        const subActivityStats = this.aggregateBySubActivity();
-        const labels = subActivityStats.map(stat => stat.subActivity);
-        const estimateData = subActivityStats.map(stat => stat.totalEstimate);
-        const actualData = subActivityStats.map(stat => stat.totalActual);
+            const subActivityStats = this.aggregateBySubActivity();
+            const labels = subActivityStats.map(stat => stat.subActivity);
+            const estimateData = subActivityStats.map(stat => stat.totalEstimate);
+            const actualData = subActivityStats.map(stat => stat.totalActual);
 
-        if (this.subActivityChart) {
-            this.subActivityChart.destroy();
-        }
+            if (this.subActivityChart) {
+                try {
+                    this.subActivityChart.destroy();
+                } catch (e) {
+                    console.warn('Error destroying subactivity chart:', e);
+                }
+                this.subActivityChart = undefined;
+            }
 
-        const ctx = this.subActivityChartCanvas.nativeElement.getContext('2d');
-        if (!ctx) return;
+            const ctx = this.subActivityChartCanvas.nativeElement.getContext('2d');
+            if (!ctx) {
+                console.warn('Could not get subactivity chart context');
+                return;
+            }
 
-        this.subActivityChart = new Chart(ctx, {
+            this.subActivityChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
@@ -674,6 +750,9 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 500
+                },
                 plugins: {
                     title: {
                         display: true,
@@ -689,6 +768,15 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
                 }
             }
         });
+            console.log('SubActivity chart created successfully');
+        } catch (error) {
+            console.error('Error creating subactivity chart:', error);
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to create subactivity chart'
+            });
+        }
     }
 
     private aggregateBySubActivity(): { subActivity: string; totalEstimate: number; totalActual: number }[] {
@@ -1010,5 +1098,37 @@ export class ProjectKpiComponent implements OnInit, AfterViewInit {
             summary: 'Success',
             detail: 'KPI data exported successfully'
         });
+    }
+
+    ngOnDestroy(): void {
+        // Destroy all chart instances to prevent memory leaks
+        if (this.chart) {
+            try {
+                this.chart.destroy();
+            } catch (e) {
+                console.warn('Error destroying estimate/actual chart on destroy:', e);
+            }
+        }
+        if (this.codingBugFixingChart) {
+            try {
+                this.codingBugFixingChart.destroy();
+            } catch (e) {
+                console.warn('Error destroying coding/bugfixing chart on destroy:', e);
+            }
+        }
+        if (this.reworkChart) {
+            try {
+                this.reworkChart.destroy();
+            } catch (e) {
+                console.warn('Error destroying rework chart on destroy:', e);
+            }
+        }
+        if (this.subActivityChart) {
+            try {
+                this.subActivityChart.destroy();
+            } catch (e) {
+                console.warn('Error destroying subactivity chart on destroy:', e);
+            }
+        }
     }
 }

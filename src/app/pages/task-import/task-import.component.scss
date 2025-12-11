@@ -78,6 +78,7 @@
     display: grid;
     grid-template-columns: 1fr 260px;
     gap: 1.5rem;
+    align-items: start;
 }
 
 // Section Headers
@@ -369,7 +370,10 @@
 // Task Templates Section
 .task-templates-section {
     position: sticky;
-    top: 1rem;
+    top: 5rem;
+    align-self: start;
+    max-height: calc(100vh - 2rem);
+    overflow: visible;
 }
 
 .task-templates-list {

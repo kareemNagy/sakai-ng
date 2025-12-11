@@ -1,0 +1,518 @@
+.daily-time-logs-container {
+    padding: 1.5rem;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+// Header Section
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-color);
+    
+    i {
+        color: var(--primary-color);
+        font-size: 1.8rem;
+    }
+}
+
+.page-subtitle {
+    color: var(--text-color-secondary);
+    margin: 0;
+    font-size: 1rem;
+    
+    .last-refresh {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+// Filter Section
+.filter-card {
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--primary-50) 0%, var(--surface-50) 100%);
+
+    ::ng-deep .p-card-body {
+        padding: 1.5rem;
+    }
+
+    .filter-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .filter-title-section {
+        .filter-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-color);
+
+            i {
+                color: var(--primary-color);
+            }
+        }
+
+        .filter-subtitle {
+            margin: 0;
+            color: var(--text-color-secondary);
+            font-size: 0.95rem;
+        }
+    }
+
+    .filter-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        .filter-label {
+            font-weight: 600;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+
+            i {
+                color: var(--primary-color);
+            }
+        }
+
+        .filter-multiselect {
+            width: 100%;
+
+            ::ng-deep {
+                .p-multiselect {
+                    width: 100%;
+                    min-height: 42px;
+                }
+
+                .p-multiselect-label {
+                    padding: 0.5rem 0.75rem;
+                }
+            }
+        }
+    }
+
+    .filter-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid var(--surface-border);
+        flex-wrap: wrap;
+        gap: 1rem;
+
+        .filter-info {
+            flex: 1;
+
+            .selection-summary {
+                color: var(--text-color-secondary);
+                font-size: 0.95rem;
+
+                strong {
+                    color: var(--primary-color);
+                    font-weight: 600;
+                }
+            }
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+    }
+}
+
+// Dropdown Item Styling
+.dropdown-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .member-name {
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .member-email {
+        color: var(--text-color-secondary);
+        font-size: 0.85rem;
+    }
+}
+
+// Summary Cards
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    ::ng-deep .p-card-body {
+        padding: 1.25rem;
+    }
+
+    .summary-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+
+        .summary-icon {
+            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface-100);
+            border-radius: 12px;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            line-height: 1;
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+            margin-top: 0.25rem;
+        }
+    }
+
+    &.warning-card {
+        border-left: 4px solid var(--yellow-600);
+    }
+}
+
+// Loading and Empty States
+.loading-state {
+    text-align: center;
+    padding: 4rem 2rem;
+
+    i {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    p {
+        color: var(--text-color-secondary);
+        font-size: 1.1rem;
+    }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+
+    i {
+        font-size: 4rem;
+        color: var(--text-color-secondary);
+        margin-bottom: 1rem;
+    }
+
+    h3 {
+        font-size: 1.5rem;
+        color: var(--text-color);
+        margin: 0.5rem 0;
+    }
+
+    p {
+        color: var(--text-color-secondary);
+        margin: 0.5rem 0;
+    }
+}
+
+// Table Styling
+.table-caption {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--surface-50);
+    border-radius: 8px 8px 0 0;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    .table-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i {
+            color: var(--primary-color);
+        }
+    }
+
+    .search-input {
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid var(--surface-border);
+        min-width: 250px;
+
+        &:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.2);
+        }
+    }
+}
+
+.table-summary {
+    padding: 1rem;
+    background: var(--surface-50);
+    text-align: center;
+    color: var(--text-color-secondary);
+    font-size: 0.95rem;
+
+    strong {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+}
+
+// Table Cell Styling
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+}
+
+.task-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .hours-change {
+        color: var(--text-color-secondary);
+        font-size: 0.85rem;
+    }
+}
+
+.task-id {
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--primary-color);
+    background: var(--primary-50);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.hours-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    color: white;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.text-center {
+    text-align: center;
+}
+
+// Non-Project Section
+.non-project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--yellow-100);
+
+    .header-left {
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .section-subtitle {
+            color: var(--text-color-secondary);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+    }
+}
+
+.non-project-table {
+    ::ng-deep {
+        .non-project-row {
+            background: var(--yellow-50) !important;
+
+            &:hover {
+                background: var(--yellow-100) !important;
+            }
+        }
+    }
+}
+
+.warning-caption {
+    background: linear-gradient(135deg, var(--yellow-50), var(--yellow-100));
+    border-left: 4px solid var(--yellow-600);
+}
+
+.warning-badge {
+    background: linear-gradient(135deg, var(--yellow-500), var(--yellow-600)) !important;
+}
+
+// PrimeNG Table Overrides
+::ng-deep {
+    .p-datatable {
+        .p-datatable-thead > tr > th {
+            background: var(--surface-100);
+            color: var(--text-color);
+            font-weight: 600;
+            border-bottom: 2px solid var(--surface-border);
+            padding: 1rem;
+        }
+
+        .p-datatable-tbody > tr {
+            &:hover {
+                background: var(--surface-50);
+            }
+
+            > td {
+                padding: 1rem;
+                border-bottom: 1px solid var(--surface-border);
+            }
+        }
+
+        .p-paginator {
+            border-top: 2px solid var(--surface-border);
+            padding: 1rem;
+        }
+    }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+    .daily-time-logs-container {
+        padding: 1rem;
+    }
+
+    .header-section {
+        flex-direction: column;
+        align-items: stretch;
+
+        .header-actions {
+            width: 100%;
+
+            ::ng-deep button {
+                flex: 1;
+            }
+        }
+    }
+
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-card {
+        .summary-content {
+            .summary-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 2rem;
+            }
+
+            .summary-value {
+                font-size: 1.5rem;
+            }
+        }
+    }
+
+    .table-caption {
+        flex-direction: column;
+        align-items: stretch;
+
+        .search-input {
+            width: 100%;
+            min-width: unset;
+        }
+    }
+
+    ::ng-deep {
+        .p-datatable {
+            font-size: 0.9rem;
+
+            .p-datatable-thead > tr > th {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .p-datatable-tbody > tr > td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+    }
+}
+
+@media (max-width: 1200px) {
+    .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+

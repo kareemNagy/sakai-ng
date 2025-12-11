@@ -41,6 +41,7 @@ export class AppMenu {
                 label: 'Resources',
                 items: [
                     { label: 'Team Members', icon: 'pi pi-fw pi-users', routerLink: ['/team'] },
+                    { label: 'Team Member KPI', icon: 'pi pi-fw pi-chart-bar', routerLink: ['/team-member-kpi'] },
                     { label: 'Technologies', icon: 'pi pi-fw pi-desktop', routerLink: ['/technologies'] },
                     { label: 'Activities', icon: 'pi pi-fw pi-check-square', routerLink: ['/activities'] },
                     { label: 'Task Templates', icon: 'pi pi-fw pi-list-check', routerLink: ['/task-templates'] },
@@ -51,6 +52,7 @@ export class AppMenu {
                 label: 'System',
                 items: [
                     { label: 'Reports', icon: 'pi pi-fw pi-chart-bar', routerLink: ['/reports'] },
+                    { label: 'Daily Time Logs', icon: 'pi pi-fw pi-clock', routerLink: ['/daily-time-logs'] },
                     { label: 'Settings', icon: 'pi pi-fw pi-cog', routerLink: ['/settings'] }
                 ]
             },

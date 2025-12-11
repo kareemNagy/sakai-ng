@@ -1,0 +1,303 @@
+<div class="team-member-kpi-container">
+    <p-toast></p-toast>
+
+    <!-- List View -->
+    @if (viewMode === 'list') {
+    <div class="list-view">
+        <!-- Header -->
+        <div class="header-section">
+            <div>
+                <h1 class="page-title">
+                    <i class="pi pi-users"></i> Team Member KPI
+                </h1>
+                <p class="page-subtitle">Track and analyze team member performance metrics</p>
+            </div>
+        </div>
+
+        <!-- Team Members Table -->
+        <p-card>
+            <p-table 
+                [value]="teamMembers" 
+                [loading]="loading"
+                [paginator]="true"
+                [rows]="10"
+                [showCurrentPageReport]="true"
+                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} team members"
+                [rowsPerPageOptions]="[10, 25, 50]"
+                [globalFilterFields]="['fullName', 'title', 'email']"
+                #dt>
+                
+                <ng-template pTemplate="caption">
+                    <div class="table-header">
+                        <span class="p-input-icon-left">
+                            <i class="pi pi-search"></i>
+                            <input 
+                                pInputText 
+                                type="text" 
+                                (input)="dt.filterGlobal($any($event.target).value, 'contains')" 
+                                placeholder="Search team members..." />
+                        </span>
+                    </div>
+                </ng-template>
+
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="fullName">Name <p-sortIcon field="fullName"></p-sortIcon></th>
+                        <th pSortableColumn="title">Title <p-sortIcon field="title"></p-sortIcon></th>
+                        <th pSortableColumn="email">Email <p-sortIcon field="email"></p-sortIcon></th>
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-member>
+                    <tr>
+                        <td>{{ member.fullName }}</td>
+                        <td>{{ member.title }}</td>
+                        <td>{{ member.email }}</td>
+                        <td>
+                            <p-button 
+                                label="View KPI"
+                                icon="pi pi-chart-bar"
+                                (onClick)="viewTeamMemberKpi(member)"
+                                [rounded]="true"
+                                size="small">
+                            </p-button>
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="4" class="text-center">
+                            <div class="empty-state">
+                                <i class="pi pi-users" style="font-size: 3rem;"></i>
+                                <p>No team members found</p>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </p-card>
+    </div>
+    }
+
+    <!-- Detail View -->
+    @if (viewMode === 'detail' && selectedTeamMember) {
+    <div class="detail-view">
+        <!-- Header -->
+        <div class="header-section">
+            <div>
+                <h1 class="page-title">
+                    <i class="pi pi-user"></i> {{ selectedTeamMember.fullName }} - KPI
+                </h1>
+                <p class="page-subtitle">{{ selectedTeamMember.title }} | {{ selectedTeamMember.email }}</p>
+            </div>
+            <div class="header-actions">
+                <p-button 
+                    label="Back to List"
+                    icon="pi pi-arrow-left"
+                    (onClick)="backToList()"
+                    severity="secondary">
+                </p-button>
+                <p-button 
+                    label="Export CSV"
+                    icon="pi pi-download"
+                    [disabled]="!kpiData || filteredTasks.length === 0"
+                    (onClick)="exportToCSV()"
+                    severity="success">
+                </p-button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        @if (loadingKpi) {
+        <div class="loading-state">
+            <i class="pi pi-spin pi-spinner" style="font-size: 3rem;"></i>
+            <p>Loading KPI data...</p>
+        </div>
+        }
+
+        <!-- KPI Content -->
+        @if (!loadingKpi && kpiData) {
+        <div class="kpi-content">
+            <!-- KPI Metrics Cards -->
+            <div class="kpi-metrics-grid">
+                <p-card styleClass="kpi-card">
+                    <div class="kpi-content-card">
+                        <div class="kpi-icon estimate">
+                            <i class="pi pi-clock"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Total Estimate</div>
+                            <div class="kpi-value">{{ formatKpiValue(kpiData.metrics.totalEstimate) }}h</div>
+                        </div>
+                    </div>
+                </p-card>
+
+                <p-card styleClass="kpi-card">
+                    <div class="kpi-content-card">
+                        <div class="kpi-icon actual">
+                            <i class="pi pi-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Total Actual</div>
+                            <div class="kpi-value">{{ formatKpiValue(kpiData.metrics.totalActual) }}h</div>
+                        </div>
+                    </div>
+                </p-card>
+
+                <p-card styleClass="kpi-card">
+                    <div class="kpi-content-card">
+                        <div class="kpi-icon deviation" [class.negative]="kpiData.metrics.deviation > 0">
+                            <i class="pi pi-chart-line"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Deviation</div>
+                            <div class="kpi-value" [class.negative-text]="kpiData.metrics.deviation > 0">
+                                {{ kpiData.metrics.deviation > 0 ? '+' : '' }}{{ formatKpiValue(kpiData.metrics.deviation) }}h
+                            </div>
+                        </div>
+                    </div>
+                </p-card>
+
+                <p-card styleClass="kpi-card">
+                    <div class="kpi-content-card">
+                        <div class="kpi-icon">
+                            <i class="pi pi-percentage"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Completion Rate</div>
+                            <div class="kpi-value">{{ formatKpiValue(kpiData.metrics.completionRate) }}%</div>
+                        </div>
+                    </div>
+                </p-card>
+
+                <p-card styleClass="kpi-card">
+                    <div class="kpi-content-card">
+                        <div class="kpi-icon">
+                            <i class="pi pi-briefcase"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Active Projects</div>
+                            <div class="kpi-value">{{ kpiData.metrics.activeProjects }}</div>
+                        </div>
+                    </div>
+                </p-card>
+
+                <p-card styleClass="kpi-card">
+                    <div class="kpi-content-card">
+                        <div class="kpi-icon">
+                            <i class="pi pi-list"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Tasks</div>
+                            <div class="kpi-value">{{ kpiData.metrics.completedTasks }} / {{ kpiData.metrics.totalTasks }}</div>
+                        </div>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <p-card styleClass="chart-card">
+                    <div class="chart-container">
+                        <canvas #estimateActualChart></canvas>
+                    </div>
+                </p-card>
+
+                <p-card styleClass="chart-card">
+                    <div class="chart-container">
+                        <canvas #codingBugFixingChart></canvas>
+                    </div>
+                </p-card>
+
+                <p-card styleClass="chart-card">
+                    <div class="chart-container">
+                        <canvas #projectDistributionChart></canvas>
+                    </div>
+                </p-card>
+
+                <p-card styleClass="chart-card">
+                    <div class="chart-container">
+                        <canvas #activityBreakdownChart></canvas>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Tasks Table -->
+            <p-card styleClass="tasks-card">
+                <ng-template pTemplate="header">
+                    <div class="card-header">
+                        <h3><i class="pi pi-list"></i> Tasks Details</h3>
+                    </div>
+                </ng-template>
+
+                <div class="filter-section">
+                    <span class="p-input-icon-left">
+                        <i class="pi pi-search"></i>
+                        <input 
+                            pInputText 
+                            type="text" 
+                            [(ngModel)]="searchTerm"
+                            (input)="applyTaskFilter()"
+                            placeholder="Search tasks..." />
+                    </span>
+                </div>
+
+                <p-table 
+                    [value]="filteredTasks"
+                    [paginator]="true"
+                    [rows]="10"
+                    [showCurrentPageReport]="true"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} tasks"
+                    [rowsPerPageOptions]="[10, 25, 50]"
+                    styleClass="p-datatable-sm">
+                    
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th>Task ID</th>
+                            <th>Title</th>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Activity</th>
+                            <th>Sub-Activity</th>
+                            <th>Estimate</th>
+                            <th>Actual</th>
+                        </tr>
+                    </ng-template>
+
+                    <ng-template pTemplate="body" let-task>
+                        <tr>
+                            <td>{{ task.id }}</td>
+                            <td>{{ task.title }}</td>
+                            <td>{{ task.projectName || task.DatabaseProjectName || 'N/A' }}</td>
+                            <td>
+                                <p-tag 
+                                    [value]="task.state" 
+                                    [severity]="getStatusSeverity(task.state)">
+                                </p-tag>
+                            </td>
+                            <td>{{ task.activity }}</td>
+                            <td>{{ task.subActivity }}</td>
+                            <td>{{ formatKpiValue(task.originalEstimate || 0) }}h</td>
+                            <td>{{ formatKpiValue(task.completedWork || 0) }}h</td>
+                        </tr>
+                    </ng-template>
+
+                    <ng-template pTemplate="emptymessage">
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <div class="empty-state">
+                                    <i class="pi pi-inbox" style="font-size: 3rem;"></i>
+                                    <p>No tasks found</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </p-card>
+        </div>
+        }
+    </div>
+    }
+</div>

@@ -1,18 +1,16 @@
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { InputTextModule } from 'primeng/inputtext';
-import { PasswordModule } from 'primeng/password';
 import { ToastModule } from 'primeng/toast';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageService } from 'primeng/api';
+import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, ToastModule],
+    imports: [ButtonModule, RouterModule, ToastModule, ProgressSpinnerModule, CommonModule],
     providers: [MessageService],
     template: `
         <p-toast></p-toast>
@@ -25,45 +23,56 @@ import { AuthService } from '../../core/services/auth.service';
                                 LD
                             </div>
                             <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">LinkDev Management</div>
-                            <span class="text-muted-color font-medium">Sign in to your account</span>
+                            <span class="text-muted-color font-medium">Sign in with your Microsoft account</span>
                         </div>
 
-                        <form (ngSubmit)="login()">
-                            <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Email</label>
-                            <input pInputText id="email1" type="email" placeholder="Email address" class="w-full md:w-120 mb-8" [(ngModel)]="email" name="email" required />
+                        <div *ngIf="loading" class="text-center py-8">
+                            <p-progressSpinner styleClass="w-12 h-12"></p-progressSpinner>
+                            <p class="text-muted-color mt-4">Connecting to Microsoft...</p>
+                        </div>
 
-                            <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-                            <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false" name="password"></p-password>
-
-                            <div class="flex items-center justify-between mt-2 mb-8 gap-8">
-                                <div class="flex items-center">
-                                    <p-checkbox [(ngModel)]="checked" id="rememberme1" binary class="mr-2" name="remember"></p-checkbox>
-                                    <label for="rememberme1">Remember me</label>
-                                </div>
-                                <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span>
-                            </div>
+                        <div *ngIf="!loading" class="space-y-4">
                             <p-button 
-                                type="submit"
-                                [label]="loading ? 'Signing in...' : 'Sign In'" 
-                                [loading]="loading"
-                                styleClass="w-full">
+                                (onClick)="loginWithMicrosoft()"
+                                label="Sign in with Microsoft" 
+                                icon="pi pi-microsoft"
+                                styleClass="w-full"
+                                severity="primary">
                             </p-button>
-                        </form>
 
-                        <p class="text-center text-muted-color mt-6">
-                            Demo credentials: admin&#64;linkdev.com / admin123
-                        </p>
+                            <div class="text-center mt-6">
+                                <p class="text-muted-color text-sm mb-2">
+                                    <i class="pi pi-info-circle mr-2"></i>
+                                    You'll be redirected to Microsoft login
+                                </p>
+                                <p class="text-muted-color text-sm">
+                                    Use your LinkDev organization account
+                                </p>
+                            </div>
+                        </div>
+
+                        <div *ngIf="healthStatus" class="mt-8 p-4 bg-surface-100 dark:bg-surface-800 rounded-lg">
+                            <p class="text-center text-sm text-muted-color">
+                                <i class="pi" [ngClass]="healthStatus.healthy ? 'pi-check-circle text-green-500' : 'pi-times-circle text-red-500'"></i>
+                                {{ healthStatus.message }}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    `
+    `,
+    styles: [`
+        :host ::ng-deep {
+            .p-button.p-button-icon-only {
+                padding: 0.75rem;
+            }
+        }
+    `]
 })
-export class Login {
-    email: string = '';
-    password: string = '';
-    checked: boolean = false;
+export class Login implements OnInit {
     loading: boolean = false;
+    healthStatus: { healthy: boolean; message: string } | null = null;
 
     constructor(
         private authService: AuthService,
@@ -71,43 +80,61 @@ export class Login {
         private messageService: MessageService
     ) {}
 
-    login(): void {
-        if (!this.email || !this.password) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Validation Error',
-                detail: 'Please enter email and password'
-            });
+    ngOnInit(): void {
+        // Check if already authenticated
+        if (this.authService.isAuthenticated()) {
+            this.router.navigate(['/dashboard']);
             return;
         }
 
-        this.loading = true;
-        this.authService.login(this.email, this.password).subscribe({
+        // Check auth service health
+        this.checkAuthHealth();
+    }
+
+    checkAuthHealth(): void {
+        this.authService.checkHealth().subscribe({
             next: (response) => {
-                if (response.success) {
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Success',
-                        detail: 'Login successful'
-                    });
-                    this.router.navigate(['/dashboard']);
+                if (response.success && response.status === 'healthy') {
+                    this.healthStatus = {
+                        healthy: true,
+                        message: 'Authentication service is ready'
+                    };
                 } else {
+                    this.healthStatus = {
+                        healthy: false,
+                        message: 'Authentication service is not properly configured'
+                    };
                     this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: response.message || 'Login failed'
+                        severity: 'warn',
+                        summary: 'Service Warning',
+                        detail: 'Authentication service may not be fully configured',
+                        life: 5000
                     });
                 }
-                this.loading = false;
             },
-            error: () => {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'Login failed'
-                });
-                this.loading = false;
+            error: (error) => {
+                console.error('Health check failed:', error);
+                this.healthStatus = {
+                    healthy: false,
+                    message: 'Cannot connect to authentication service'
+                };
             }
         });
+    }
+
+    loginWithMicrosoft(): void {
+        this.loading = true;
+        
+        this.messageService.add({
+            severity: 'info',
+            summary: 'Redirecting',
+            detail: 'Taking you to Microsoft login...',
+            life: 2000
+        });
+
+        // Initiate Azure AD OAuth flow
+        setTimeout(() => {
+            this.authService.initiateLogin();
+        }, 500);
     }
 }

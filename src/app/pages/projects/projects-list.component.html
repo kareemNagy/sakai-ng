@@ -19,6 +19,8 @@
                 (onClick)="syncWithDevOps()"
                 styleClass="btn-sync">
             </p-button>
+            <!-- Optional: Keep Import All as a secondary option -->
+            <!--
             <p-button 
                 *ngIf="devOpsProjectsToImport.length > 0"
                 [label]="'Import All (' + devOpsProjectsToImport.length + ')'"
@@ -26,8 +28,10 @@
                 [loading]="syncing"
                 [disabled]="devOpsProjectsToImport.length === 0 || syncing"
                 (onClick)="importAllDevOpsProjects()"
-                severity="success">
+                severity="success"
+                [text]="true">
             </p-button>
+            -->
             <p-button 
                 label="New Project"
                 icon="pi pi-plus"
@@ -152,7 +156,22 @@
             </ng-template>
             <ng-template pTemplate="body" let-project>
                 <tr [class.inactive-row]="!project.isActive">
-                    <td><strong>{{ project.projectName }}</strong></td>
+                    <td>
+                        <strong>{{ project.projectName }}</strong>
+                        <!-- Show source badge -->
+                        <p-tag 
+                            *ngIf="project.source === 'devops'"
+                            value="DevOps Only"
+                            [attr.severity]="'warning'"
+                            [style]="{'margin-left': '8px', 'font-size': '0.75rem'}">
+                        </p-tag>
+                        <p-tag 
+                            *ngIf="project.source === 'both'"
+                            value="Synced"
+                            severity="success"
+                            [style]="{'margin-left': '8px', 'font-size': '0.75rem'}">
+                        </p-tag>
+                    </td>
                     <td>{{ project.projectManagerName }}</td>
                     <td>
                         <p-tag 
@@ -173,8 +192,21 @@
                     </td>
                     <td>
                         <div class="action-buttons">
+                            <!-- Import button for DevOps-only projects -->
                             <p-button 
-                                *ngIf="project.devOpsProjectId"
+                                *ngIf="project.source === 'devops'"
+                                icon="pi pi-download"
+                                label="Import"
+                                (onClick)="importSingleDevOpsProject(project)"
+                                [rounded]="true"
+                                severity="success"
+                                size="small"
+                                [attr.pTooltip]="'Import to Database'">
+                            </p-button>
+                            
+                            <!-- Update from DevOps button for synced projects -->
+                            <p-button 
+                                *ngIf="project.devOpsProjectId && project.projectId"
                                 icon="pi pi-sync"
                                 (onClick)="updateFromDevOps(project)"
                                 [text]="true"
@@ -183,6 +215,8 @@
                                 size="small"
                                 [attr.pTooltip]="'Update from DevOps'">
                             </p-button>
+                            
+                            <!-- View Details button -->
                             <p-button 
                                 icon="pi pi-eye"
                                 (onClick)="viewProjectDetails(project)"
@@ -192,6 +226,8 @@
                                 size="small"
                                 [attr.pTooltip]="'View Details'">
                             </p-button>
+                            
+                            <!-- Project Hub button for database projects -->
                             <p-button 
                                 *ngIf="project.projectId"
                                 icon="pi pi-cog"
@@ -202,6 +238,8 @@
                                 size="small"
                                 [attr.pTooltip]="'Project Hub'">
                             </p-button>
+                            
+                            <!-- Edit button for database projects -->
                             <p-button 
                                 *ngIf="project.projectId"
                                 icon="pi pi-pencil"
@@ -212,6 +250,8 @@
                                 size="small"
                                 [attr.pTooltip]="'Edit'">
                             </p-button>
+                            
+                            <!-- Activate/Deactivate button for database projects -->
                             <p-button 
                                 *ngIf="project.projectId"
                                 [icon]="project.isActive ? 'pi pi-ban' : 'pi pi-check'"

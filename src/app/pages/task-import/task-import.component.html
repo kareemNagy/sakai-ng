@@ -194,8 +194,8 @@
                                                 <p-select
                                                     [(ngModel)]="task.subActivity"
                                                     [options]="getSubActivitiesForActivity(task.activity)"
-                                                    optionLabel="subActivityName"
-                                                    optionValue="subActivityName"
+                                                    optionLabel="SubActivityName"
+                                                    optionValue="SubActivityName"
                                                     [ngClass]="{'p-invalid': !task.subActivity || task.subActivity.trim() === ''}"
                                                     (onFocus)="loadSubActivitiesForActivity(task.activity)"
                                                     placeholder="Select Sub Activity..."
@@ -228,8 +228,10 @@
                                                     [(ngModel)]="task.assignedTo"
                                                     [suggestions]="filteredTeamMembers[getTaskKey(story.userStoryId, $index)] || []"
                                                     (completeMethod)="searchTeamMembers($event, getTaskKey(story.userStoryId, $index))"
-                                                    [attr.field]="'email'"
-                                                    [ngClass]="{'p-invalid': !task.assignedTo || task.assignedTo.trim() === ''}"
+                                                    (onSelect)="onTeamMemberSelect($event, task)"
+                                                    field="email"
+                                                    [forceSelection]="true"
+                                                    [ngClass]="{'p-invalid': !task.assignedTo || (typeof task.assignedTo === 'string' && task.assignedTo.trim() === '')}"
                                                     placeholder="Search team member (required)..."
                                                     (click)="$event.stopPropagation()"
                                                     styleClass="w-full"
@@ -241,7 +243,7 @@
                                                         </div>
                                                     </ng-template>
                                                 </p-autoComplete>
-                                                @if (task.assignedTo) {
+                                                @if (task.assignedTo && typeof task.assignedTo === 'string') {
                                                 <div class="assigned-badge">
                                                     <i class="pi pi-user-check"></i> {{ task.assignedTo }}
                                                 </div>

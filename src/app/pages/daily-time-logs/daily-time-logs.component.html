@@ -1,0 +1,488 @@
+<div class="daily-time-logs-container">
+    <!-- Page Header -->
+    <div class="header-section">
+        <div>
+            <h1 class="page-title">
+                <i class="pi pi-clock"></i>
+                Daily Time Logs
+            </h1>
+            <p class="page-subtitle">
+                Today's logged hours from Azure DevOps
+                @if (lastRefreshTime) {
+                <span class="last-refresh">
+                    • Last updated: {{ lastRefreshTime | date:'short' }}
+                </span>
+                }
+            </p>
+        </div>
+        <div class="header-actions">
+            @if (hasDataLoaded) {
+            <p-button 
+                label="Export CSV"
+                icon="pi pi-download"
+                [outlined]="true"
+                (onClick)="exportToCSV()"
+                [disabled]="loading || timeLogs.length === 0">
+            </p-button>
+            }
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <p-card styleClass="filter-card">
+        <div class="filter-section">
+            <div class="filter-title-section">
+                <h3 class="filter-title">
+                    <i class="pi pi-filter"></i>
+                    Select Projects & Team Members
+                </h3>
+                <p class="filter-subtitle">
+                    Choose projects and team members to sync their time logs
+                </p>
+            </div>
+
+            <div class="filter-controls">
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label for="projects" class="filter-label">
+                            <i class="pi pi-folder"></i>
+                            Projects
+                        </label>
+                        <p-multiSelect
+                            id="projects"
+                            [options]="availableProjects"
+                            [(ngModel)]="selectedProjects"
+                            optionLabel="ProjectName"
+                            placeholder="Select Projects"
+                            [filter]="true"
+                            filterPlaceHolder="Search projects"
+                            [showToggleAll]="true"
+                            [disabled]="loadingDropdowns || loading"
+                            (onChange)="onProjectsChange()"
+                            styleClass="filter-multiselect">
+                            <ng-template let-project pTemplate="item">
+                                <div class="dropdown-item">
+                                    <span>{{ project.ProjectName }}</span>
+                                </div>
+                            </ng-template>
+                        </p-multiSelect>
+                    </div>
+
+                    <div class="filter-item">
+                        <label for="teamMembers" class="filter-label">
+                            <i class="pi pi-users"></i>
+                            Team Members
+                        </label>
+                        <p-multiSelect
+                            id="teamMembers"
+                            [options]="availableTeamMembers"
+                            [(ngModel)]="selectedTeamMembers"
+                            optionLabel="FullName"
+                            placeholder="Select Team Members"
+                            [filter]="true"
+                            filterPlaceHolder="Search members"
+                            [showToggleAll]="true"
+                            [disabled]="loadingDropdowns || loading"
+                            styleClass="filter-multiselect">
+                            <ng-template let-member pTemplate="item">
+                                <div class="dropdown-item">
+                                    <span class="member-name">{{ member.FullName }}</span>
+                                    <small class="member-email">{{ member.Email }}</small>
+                                </div>
+                            </ng-template>
+                        </p-multiSelect>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <div class="filter-info">
+                        @if (selectedProjects.length > 0 || selectedTeamMembers.length > 0) {
+                        <span class="selection-summary">
+                            <strong>{{ selectedProjects.length }}</strong> project(s),
+                            <strong>{{ selectedTeamMembers.length }}</strong> team member(s) selected
+                        </span>
+                        }
+                    </div>
+                    <div class="action-buttons">
+                        <p-button 
+                            label="Clear All"
+                            icon="pi pi-times"
+                            [text]="true"
+                            severity="secondary"
+                            (onClick)="clearFilters()"
+                            [disabled]="loading || (selectedProjects.length === 0 && selectedTeamMembers.length === 0)">
+                        </p-button>
+                        <p-button 
+                            label="Sync Data"
+                            icon="pi pi-sync"
+                            [loading]="loading"
+                            (onClick)="syncData()"
+                            [disabled]="loadingDropdowns || (selectedProjects.length === 0 && selectedTeamMembers.length === 0)"
+                            pTooltip="Click to load time logs for selected filters"
+                            tooltipPosition="top">
+                        </p-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </p-card>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <p-card styleClass="summary-card">
+            <div class="summary-content">
+                <i class="pi pi-clock summary-icon" style="color: var(--primary-color);"></i>
+                <div>
+                    <div class="summary-value">{{ summary.totalHours.toFixed(1) }}h</div>
+                    <div class="summary-label">Total Hours Logged</div>
+                </div>
+            </div>
+        </p-card>
+
+        <p-card styleClass="summary-card">
+            <div class="summary-content">
+                <i class="pi pi-users summary-icon" style="color: var(--green-500);"></i>
+                <div>
+                    <div class="summary-value">{{ summary.totalUsers }}</div>
+                    <div class="summary-label">Active Users</div>
+                </div>
+            </div>
+        </p-card>
+
+        <p-card styleClass="summary-card">
+            <div class="summary-content">
+                <i class="pi pi-list summary-icon" style="color: var(--blue-500);"></i>
+                <div>
+                    <div class="summary-value">{{ summary.totalTasks }}</div>
+                    <div class="summary-label">Tasks Updated</div>
+                </div>
+            </div>
+        </p-card>
+
+        <p-card styleClass="summary-card">
+            <div class="summary-content">
+                <i class="pi pi-bolt summary-icon" style="color: var(--orange-500);"></i>
+                <div>
+                    <div class="summary-value">{{ processingTime }}ms</div>
+                    <div class="summary-label">Load Time</div>
+                </div>
+            </div>
+        </p-card>
+
+        @if (nonProjectLogs.length > 0) {
+        <p-card styleClass="summary-card warning-card">
+            <div class="summary-content">
+                <i class="pi pi-exclamation-triangle summary-icon" style="color: var(--yellow-600);"></i>
+                <div>
+                    <div class="summary-value">{{ summary.nonProjectHours?.toFixed(1) || 0 }}h</div>
+                    <div class="summary-label">Non-Project Hours</div>
+                </div>
+            </div>
+        </p-card>
+        }
+    </div>
+
+    <!-- Data Table -->
+    <p-card>
+        @if (loading) {
+        <div class="loading-state">
+            <i class="pi pi-spin pi-spinner"></i>
+            <p>Syncing time logs from Azure DevOps...</p>
+        </div>
+        }
+
+        @if (!loading && !hasDataLoaded) {
+        <div class="empty-state">
+            <i class="pi pi-info-circle"></i>
+            <h3>No Data Loaded</h3>
+            <p>Select projects and team members above, then click "Sync Data" to load time logs.</p>
+        </div>
+        }
+
+        @if (!loading && hasDataLoaded && timeLogs.length === 0) {
+        <div class="empty-state">
+            <i class="pi pi-info-circle"></i>
+            <h3>No Time Logs Found</h3>
+            <p>No hours have been logged today for the selected filters.</p>
+            <p-button 
+                label="Sync Again"
+                icon="pi pi-sync"
+                [text]="true"
+                (onClick)="syncData()">
+            </p-button>
+        </div>
+        }
+
+        @if (!loading && hasDataLoaded && timeLogs.length > 0) {
+        <p-table 
+            #dt
+            [value]="timeLogs" 
+            [paginator]="true" 
+            [rows]="20"
+            [rowsPerPageOptions]="[10, 20, 50, 100]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+            [globalFilterFields]="['userName', 'email', 'taskName', 'projectName', 'workItemType']"
+            styleClass="p-datatable-striped"
+            [tableStyle]="{ 'min-width': '60rem' }">
+            
+            <ng-template pTemplate="caption">
+                <div class="table-caption">
+                    <span class="table-title">
+                        <i class="pi pi-list"></i>
+                        Time Log Entries ({{ timeLogs.length }})
+                    </span>
+                    <input 
+                        pInputText 
+                        type="text" 
+                        placeholder="Search..."
+                        #searchInput
+                        (input)="dt.filterGlobal(searchInput.value, 'contains')"
+                        class="search-input">
+                </div>
+            </ng-template>
+
+            <ng-template pTemplate="header">
+                <tr>
+                    <th pSortableColumn="userName" style="width: 15%;">
+                        User Name <p-sortIcon field="userName"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="email" style="width: 15%;">
+                        Email <p-sortIcon field="email"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="taskName" style="width: 20%;">
+                        Task Name <p-sortIcon field="taskName"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="taskId" style="width: 8%;">
+                        Task ID <p-sortIcon field="taskId"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="projectName" style="width: 12%;">
+                        Project <p-sortIcon field="projectName"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="workItemType" style="width: 10%;">
+                        Type <p-sortIcon field="workItemType"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="state" style="width: 8%;">
+                        State <p-sortIcon field="state"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="hours" style="width: 8%;" class="text-center">
+                        Hours <p-sortIcon field="hours"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="loggedAt" style="width: 10%;">
+                        Logged At <p-sortIcon field="loggedAt"></p-sortIcon>
+                    </th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-log>
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">
+                                {{ log.userName.charAt(0) }}
+                            </div>
+                            <strong>{{ log.userName }}</strong>
+                        </div>
+                    </td>
+                    <td>
+                        <small style="color: var(--text-color-secondary);">{{ log.email }}</small>
+                    </td>
+                    <td>
+                        <div class="task-cell">
+                            <strong>{{ log.taskName }}</strong>
+                            @if (log.previousHours !== undefined) {
+                            <small class="hours-change">
+                                ({{ log.previousHours }}h → {{ log.newTotalHours }}h)
+                            </small>
+                            }
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <span class="task-id">{{ log.taskId }}</span>
+                    </td>
+                    <td>{{ log.projectName }}</td>
+                    <td>
+                        <p-tag 
+                            [value]="log.workItemType" 
+                            [severity]="getWorkItemTypeSeverity(log.workItemType)">
+                        </p-tag>
+                    </td>
+                    <td>
+                        <p-tag 
+                            [value]="log.state" 
+                            [attr.severity]="getStateSeverity(log.state)"
+                            [style]="{'font-size': '0.85rem'}">
+                        </p-tag>
+                    </td>
+                    <td class="text-center">
+                        <span class="hours-badge">{{ log.hours.toFixed(1) }}h</span>
+                    </td>
+                    <td>
+                        <small>{{ formatLoggedAt(log.loggedAt) }}</small>
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="summary">
+                <div class="table-summary">
+                    Total: <strong>{{ summary.totalHours.toFixed(1) }}</strong> hours logged by 
+                    <strong>{{ summary.totalUsers }}</strong> users on 
+                    <strong>{{ summary.totalTasks }}</strong> tasks
+                </div>
+            </ng-template>
+        </p-table>
+        }
+    </p-card>
+
+    <!-- Non-Project Hours Section -->
+    @if (nonProjectLogs.length > 0) {
+    <p-card styleClass="mt-3">
+        <div class="non-project-header">
+            <div class="header-left">
+                <h3 class="section-title">
+                    <i class="pi pi-exclamation-triangle" style="color: var(--yellow-600);"></i>
+                    Non-Project Hours
+                </h3>
+                <p class="section-subtitle">
+                    Hours logged on tasks NOT in your active projects
+                </p>
+            </div>
+            <p-button 
+                [icon]="showNonProjectSection ? 'pi pi-eye-slash' : 'pi pi-eye'"
+                [label]="showNonProjectSection ? 'Hide' : 'Show'"
+                [text]="true"
+                (onClick)="toggleNonProjectSection()">
+            </p-button>
+        </div>
+
+        @if (showNonProjectSection) {
+        <p-table 
+            #dtNonProject
+            [value]="nonProjectLogs" 
+            [paginator]="true" 
+            [rows]="10"
+            [rowsPerPageOptions]="[10, 20, 50]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} non-project entries"
+            [globalFilterFields]="['userName', 'email', 'taskName', 'projectName', 'workItemType']"
+            styleClass="p-datatable-striped non-project-table"
+            [tableStyle]="{ 'min-width': '60rem' }">
+            
+            <ng-template pTemplate="caption">
+                <div class="table-caption warning-caption">
+                    <span class="table-title">
+                        <i class="pi pi-list"></i>
+                        Non-Project Entries ({{ nonProjectLogs.length }})
+                    </span>
+                    <input 
+                        pInputText 
+                        type="text" 
+                        placeholder="Search..."
+                        #searchNonProject
+                        (input)="dtNonProject.filterGlobal(searchNonProject.value, 'contains')"
+                        class="search-input">
+                </div>
+            </ng-template>
+
+            <ng-template pTemplate="header">
+                <tr>
+                    <th pSortableColumn="userName" style="width: 15%;">
+                        User Name <p-sortIcon field="userName"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="email" style="width: 15%;">
+                        Email <p-sortIcon field="email"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="taskName" style="width: 20%;">
+                        Task Name <p-sortIcon field="taskName"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="taskId" style="width: 8%;">
+                        Task ID <p-sortIcon field="taskId"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="projectName" style="width: 12%;">
+                        Project <p-sortIcon field="projectName"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="workItemType" style="width: 10%;">
+                        Type <p-sortIcon field="workItemType"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="state" style="width: 8%;">
+                        State <p-sortIcon field="state"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="hours" style="width: 8%;" class="text-center">
+                        Hours <p-sortIcon field="hours"></p-sortIcon>
+                    </th>
+                    <th pSortableColumn="loggedAt" style="width: 10%;">
+                        Logged At <p-sortIcon field="loggedAt"></p-sortIcon>
+                    </th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-log>
+                <tr class="non-project-row">
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">
+                                {{ log.userName.charAt(0) }}
+                            </div>
+                            <strong>{{ log.userName }}</strong>
+                        </div>
+                    </td>
+                    <td>
+                        <small style="color: var(--text-color-secondary);">{{ log.email }}</small>
+                    </td>
+                    <td>
+                        <div class="task-cell">
+                            <strong>{{ log.taskName }}</strong>
+                            @if (log.previousHours !== undefined) {
+                            <small class="hours-change">
+                                ({{ log.previousHours }}h → {{ log.newTotalHours }}h)
+                            </small>
+                            }
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <span class="task-id">{{ log.taskId }}</span>
+                    </td>
+                    <td>
+                        <p-tag 
+                            [value]="log.projectName" 
+                            severity="warn"
+                            pTooltip="Non-active project"
+                            tooltipPosition="top">
+                        </p-tag>
+                    </td>
+                    <td>
+                        <p-tag 
+                            [value]="log.workItemType" 
+                            [severity]="getWorkItemTypeSeverity(log.workItemType)">
+                        </p-tag>
+                    </td>
+                    <td>
+                        <p-tag 
+                            [value]="log.state" 
+                            [severity]="getStateSeverity(log.state)"
+                            [style]="{'font-size': '0.85rem'}">
+                        </p-tag>
+                    </td>
+                    <td class="text-center">
+                        <span class="hours-badge warning-badge">{{ log.hours.toFixed(1) }}h</span>
+                    </td>
+                    <td>
+                        <small>{{ formatLoggedAt(log.loggedAt) }}</small>
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="summary">
+                <div class="table-summary">
+                    Non-project total: <strong>{{ summary.nonProjectHours?.toFixed(1) || 0 }}</strong> hours on 
+                    <strong>{{ summary.nonProjectTasks || 0 }}</strong> tasks
+                </div>
+            </ng-template>
+        </p-table>
+        }
+    </p-card>
+    }
+</div>
+
+<p-toast></p-toast>
+

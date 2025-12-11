@@ -86,20 +86,20 @@ export class TodoService {
 
   getTodoById(id: number): Observable<Todo> {
     return this.http.get<ApiResponse<any>>(`${this.API_URL}/${id}`).pipe(
-      map(response => this.mapTodo(response.data!))
+      map(response => response.data ? this.mapTodo(response.data) : {} as Todo)
     );
   }
 
   createTodo(todo: Partial<Todo>): Observable<Todo> {
     return this.http.post<ApiResponse<any>>(this.API_URL, todo).pipe(
-      map(response => this.mapTodo(response.data!)),
+      map(response => response.data ? this.mapTodo(response.data) : {} as Todo),
       tap(() => this.loadTodos())
     );
   }
 
   updateTodo(id: number, todo: Partial<Todo>): Observable<Todo> {
     return this.http.put<ApiResponse<any>>(`${this.API_URL}/${id}`, todo).pipe(
-      map(response => this.mapTodo(response.data!)),
+      map(response => response.data ? this.mapTodo(response.data) : {} as Todo),
       tap(() => this.loadTodos())
     );
   }
@@ -136,7 +136,7 @@ export class TodoService {
       commentText,
       teamMemberId
     }).pipe(
-      map(response => this.mapComment(response.data!))
+      map(response => response.data ? this.mapComment(response.data) : {} as TodoComment)
     );
   }
 

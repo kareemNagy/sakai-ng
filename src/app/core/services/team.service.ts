@@ -85,5 +85,11 @@ export class TeamService {
       map(response => response.data || [])
     );
   }
+
+  getTeamMemberKpi(teamMemberId: number): Observable<any> {
+    return this.http.get<ApiResponse<any>>(`${this.API_URL}/${teamMemberId}/kpi`).pipe(
+      map(response => response.data)
+    );
+  }
 }
 
